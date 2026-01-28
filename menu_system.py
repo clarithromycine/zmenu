@@ -317,10 +317,12 @@ class Menu:
         Args:
             clear_first: Whether to clear screen on first display
         """
-        self._hide_cursor()  # Hide cursor during menu navigation
         try:
             while True:
+                self._hide_cursor()  # Hide cursor during menu navigation
                 choice = self._get_user_choice(clear_initial=clear_first)
+                self._show_cursor()  # Show cursor before executing choice
+                
                 if choice is None:
                     continue
                 
@@ -330,7 +332,7 @@ class Menu:
                 # After first interaction, don't clear on next menu display
                 clear_first = False
         finally:
-            self._show_cursor()  # Show cursor when exiting menu
+            self._show_cursor()  # Ensure cursor is shown when exiting menu
 
 
 class ConsoleApp:
