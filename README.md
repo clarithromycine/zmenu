@@ -1,54 +1,66 @@
-# Multi-Level Menu Console Application
+# ZMenu - Multi-Level Menu Console Application
 
-A flexible Python console application framework that supports nested menus at multiple levels.
+A flexible and reusable Python framework for building interactive console applications with nested menu support at unlimited depth levels.
 
-## Features
+## 📋 Overview
 
-✨ **Key Features:**
-- Multi-level nested menu support
-- Clean, user-friendly console interface
-- Easy to extend with new options
-- Error handling and input validation
-- Automatic "Back" navigation between menu levels
-- Exit functionality at any menu level
+ZMenu is a modern console application framework that simplifies the creation of complex, hierarchical menu-driven applications. It handles all the tedious work of menu navigation, input processing, and state management, allowing developers to focus on implementing their application logic.
 
-## Project Structure
+## ✨ Features
+
+- **Multi-level nested menus** - Support for unlimited menu depth
+- **Interactive keyboard navigation** - Arrow keys and number input support
+- **Cross-platform compatibility** - Windows (MSVCRT) and Unix/Linux support
+- **Clean, elegant UI** - Formatted headers, visual indicators, and status messages
+- **Easy to extend** - Simple API for adding menu items and submenus
+- **Automatic navigation** - Built-in "Back" option for returning to parent menus
+- **Input validation** - Error handling and input validation included
+- **Callable actions** - Execute any Python function when a menu item is selected
+- **Visual feedback** - Highlighting for selected menu items with arrow indicators
+
+## 📁 Project Structure
 
 ```
-console_app/
-├── menu_system.py      # Core menu system framework
-├── main.py             # Example application with multi-level menus
-└── README.md           # This file
+zmenu/
+├── menu_system.py          # Core framework - Menu, MenuItem, ConsoleApp classes
+├── main.py                 # Example application demonstrating all features
+├── .gitignore              # Git ignore file for Python projects
+└── README.md               # This file
 ```
 
-## Installation & Running
+## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.6 or higher
+- No external dependencies required
 
-### Running the Application
+### Running the Example Application
 
 ```bash
 python main.py
 ```
 
-## How to Use
+## 🎮 Navigation Guide
 
-1. **Navigate menus** using numbers (1, 2, 3, etc.)
-2. **Go back** to parent menu using the "Back" option
-3. **Exit** by pressing `0` at any menu level
-4. **Follow prompts** for actions that require input
+| Control | Action |
+|---------|--------|
+| **Arrow Keys ↑ ↓** | Move between menu items |
+| **Number Keys (1-9)** | Jump directly to a menu item |
+| **Enter** | Select the highlighted menu item |
+| **0** | Exit the application or return to parent menu |
 
-### Example Menu Navigation
+## 📊 Example Application Structure
+
+The included example demonstrates a complete application with multiple levels:
 
 ```
 My Console Application
-├── Say Hello
-├── Greet User
-├── Tools
+├── 👋 Say Hello
+├── 👤 Greet User
+├── 🛠️  Tools
 │   ├── Calculator
 │   └── System Information
-├── Settings
+├── ⚙️  Settings
 │   ├── Display Options
 │   │   ├── Change Theme
 │   │   └── Change Font Size
@@ -56,190 +68,291 @@ My Console Application
 │       ├── English
 │       ├── Español
 │       └── Français
-└── Help
+└── ❓ Help
     ├── About
     ├── How to Use
     └── Keyboard Shortcuts
 ```
 
-## Customization Guide
+## 📖 API Reference
 
-### Adding a Simple Menu Item
-
-```python
-main_menu.add_item("key", "Display Label", action_function)
-```
-
-**Example:**
-```python
-def my_action():
-    print("Hello World!")
-    return True
-
-main_menu.add_item("hello", "👋 Say Hello", my_action)
-```
-
-### Adding a Submenu
-
-```python
-submenu = main_menu.add_submenu("key", "Submenu Label")
-submenu.add_item("item1", "Item 1", action_function)
-submenu.add_item("item2", "Item 2", action_function)
-```
-
-**Example:**
-```python
-tools = main_menu.add_submenu("tools", "🛠️ Tools")
-tools.add_item("calc", "Calculator", show_calculator)
-tools.add_item("info", "System Info", show_system_info)
-```
-
-### Creating Multi-Level Submenus
-
-```python
-# Add submenu to main menu
-settings = main_menu.add_submenu("settings", "⚙️ Settings")
-
-# Add submenu to submenu
-display = settings.add_submenu("display", "Display")
-
-# Add items to nested submenu
-display.add_item("theme", "Change Theme", set_theme)
-```
-
-### Action Function Requirements
-
-- Must be callable (function or lambda)
-- Should return `True` to continue the menu, `False` to exit
-- Can accept input and display output
-- Should handle exceptions gracefully
-
-**Example:**
-```python
-def validate_age():
-    try:
-        age = int(input("Enter your age: "))
-        if 0 <= age <= 150:
-            print(f"You are {age} years old")
-            return True
-        else:
-            print("Invalid age")
-            return True  # Stay in menu
-    except ValueError:
-        print("Please enter a valid number")
-        return True  # Stay in menu
-```
-
-## Built-in Examples
-
-The included `main.py` demonstrates:
-
-1. **Basic Menu Items**
-   - Simple actions like "Say Hello"
-   - Actions with user input like "Greet User"
-
-2. **Tools Submenu**
-   - Calculator (demonstrates computation)
-   - System Information (demonstrates data display)
-
-3. **Settings Submenu (Multi-level)**
-   - Display Options (theme, font)
-   - Language Selection
-
-4. **Help Submenu**
-   - About information
-   - Usage instructions
-   - Keyboard shortcuts
-
-## Advanced Usage
-
-### Creating a Custom Application
+### `ConsoleApp` - Main Application Class
 
 ```python
 from menu_system import ConsoleApp
 
-# Create app
+app = ConsoleApp("My Application Title")
+main_menu = app.get_menu()  # Get the root menu
+app.run()  # Start the application
+```
+
+### `Menu.add_item(key, label, action)`
+
+Add an action item to the menu.
+
+```python
+def greet():
+    print("Hello!")
+    return True
+
+menu.add_item("greet", "👋 Say Hello", greet)
+```
+
+**Parameters:**
+- `key` (str): Unique identifier for the item
+- `label` (str): Display text in the menu
+- `action` (callable): Function to execute when selected
+
+### `Menu.add_submenu(key, label)`
+
+Add a submenu and return it for configuration.
+
+```python
+tools_menu = menu.add_submenu("tools", "🛠️  Tools")
+tools_menu.add_item("calc", "Calculator", show_calculator)
+```
+
+**Parameters:**
+- `key` (str): Unique identifier for the submenu
+- `label` (str): Display text in the menu
+
+**Returns:**
+- A new `Menu` object ready for configuration
+
+### `MenuItem` - Individual Menu Item
+
+```python
+item = MenuItem("Greet", lambda: print("Hello!"))
+item.execute()  # Output: Hello!
+```
+
+## 🛠️ Creating Your Own Application
+
+### Basic Example
+
+```python
+from menu_system import ConsoleApp
+
+def on_action_1():
+    print("You selected Action 1!")
+    return True
+
+def on_action_2():
+    print("You selected Action 2!")
+    return True
+
+# Create application
 app = ConsoleApp("My App")
 menu = app.get_menu()
 
-# Add items and submenus
-menu.add_item("opt1", "Option 1", my_function)
-submenu = menu.add_submenu("sub", "Submenu")
-submenu.add_item("opt2", "Option 2", another_function)
+# Add menu items
+menu.add_item("action1", "Action 1", on_action_1)
+menu.add_item("action2", "Action 2", on_action_2)
 
-# Run
+# Add a submenu
+submenu = menu.add_submenu("settings", "⚙️ Settings")
+submenu.add_item("opt1", "Option 1", lambda: print("Option 1 selected"))
+
+# Run the application
 app.run()
 ```
 
-### Handling Complex Data
+### Key Guidelines
+
+- **Return `True`** from action functions to keep the menu open
+- **Return `False`** to exit the application
+- Use **lambda functions** for simple, one-line actions
+- Use **emoji** in labels for visual appeal (e.g., 👋, 🛠️, ⚙️, ❓)
+- **Nested submenus** work at any depth level
+
+### Advanced Example - Multi-Level Settings
 
 ```python
-def process_data():
-    user_input = input("Enter data: ")
-    # Process the input
-    result = analyze(user_input)
-    print(f"Result: {result}")
-    return True  # Continue menu
+from menu_system import ConsoleApp
 
-menu.add_item("process", "Process Data", process_data)
+app = ConsoleApp("Settings App")
+menu = app.get_menu()
+
+# Create Settings submenu
+settings = menu.add_submenu("settings", "⚙️ Settings")
+
+# Add nested Display submenu
+display = settings.add_submenu("display", "Display")
+display.add_item("theme", "Change Theme", lambda: print("Theme changed"))
+display.add_item("size", "Font Size", lambda: print("Font size adjusted"))
+
+# Add nested Audio submenu
+audio = settings.add_submenu("audio", "Audio")
+audio.add_item("vol", "Volume", lambda: print("Volume adjusted"))
+audio.add_item("mute", "Mute", lambda: print("Toggled mute"))
+
+app.run()
 ```
 
-## Architecture
+## 💾 Action Function Best Practices
+
+### Simple Action
+```python
+def simple_action():
+    print("Action executed!")
+    return True  # Continue menu
+
+menu.add_item("simple", "Simple Action", simple_action)
+```
+
+### Action with User Input
+```python
+def action_with_input():
+    try:
+        name = input("Enter your name: ")
+        print(f"Hello, {name}!")
+        return True
+    except Exception as e:
+        print(f"Error: {e}")
+        return True  # Stay in menu
+
+menu.add_item("greet", "Greet User", action_with_input)
+```
+
+### Action with Data Processing
+```python
+def calculate():
+    try:
+        a = float(input("Enter first number: "))
+        b = float(input("Enter second number: "))
+        result = a + b
+        print(f"Sum: {result}")
+        return True
+    except ValueError:
+        print("Please enter valid numbers")
+        return True
+
+menu.add_item("calc", "Add Numbers", calculate)
+```
+
+## 🏗️ Technical Architecture
 
 ### Core Classes
 
-- **MenuItem**: Represents a single menu option with an action
-- **Menu**: Manages menu items, submenus, display, and user input
-- **ConsoleApp**: Main application wrapper
+**MenuItem**
+- Represents a single menu item
+- Stores label and optional action callable
+- `execute()` method runs the associated action
 
-### Menu Flow
+**Menu**
+- Manages a collection of menu items and submenus
+- Handles display formatting and layout
+- Processes user input (keyboard and number)
+- Maintains parent-child relationships for hierarchy
+
+**ConsoleApp**
+- Top-level application controller
+- Manages the root menu
+- Provides `run()` method to start the application loop
+
+### Input Processing Flow
 
 ```
-User selects option
+User Input (keyboard or number)
     ↓
-Menu validates input
+Validate input (is it a valid choice?)
     ↓
-Execute action or open submenu
+Execute action or navigate submenu
     ↓
-Display menu again (or close if exit)
+Display result
+    ↓
+Redraw menu (or close if exit)
 ```
 
-## Tips & Best Practices
+## 🎨 Customization Tips
 
-1. **Use Emojis** for better visual appeal
-   ```python
-   menu.add_item("calc", "🧮 Calculator", show_calculator)
-   ```
+### Use Emojis for Visual Appeal
+```python
+menu.add_item("calc", "🧮 Calculator", show_calculator)
+menu.add_item("info", "ℹ️ System Info", show_system_info)
+menu.add_item("gear", "⚙️ Settings", show_settings)
+```
 
-2. **Keep Action Functions Simple** - Complex logic should be in separate modules
+### Organize Related Options
+Group related menu items in submenus for better UX:
+```python
+tools = menu.add_submenu("tools", "🛠️ Tools")
+tools.add_item("calc", "Calculator", calculator)
+tools.add_item("conv", "Converter", converter)
+```
 
-3. **Always Return Boolean** from action functions to indicate continuation
+### Handle Exceptions Gracefully
+Always wrap user input in try-except blocks to prevent crashes.
 
-4. **Handle Exceptions** in action functions gracefully
+### Test Navigation Thoroughly
+Verify that:
+- All menu items are accessible
+- Back/exit options work at all levels
+- No infinite loops or dead ends exist
 
-5. **Test Navigation** - Verify back/exit options work at all levels
+## 📋 Features Implemented
 
-6. **Organize Logically** - Group related options in submenus
+✅ Multi-level menu support (unlimited depth)
+✅ Interactive keyboard navigation
+✅ Number-based direct selection
+✅ Automatic "Back" option in submenus
+✅ Clean, formatted console output
+✅ Error handling and input validation
+✅ Cross-platform support
+✅ Visual indicators (arrows, highlighting)
+✅ Easy extensibility
+✅ Built-in example application
 
-## Troubleshooting
+## 🔧 Extending the Framework
 
-**Q: Menu doesn't display properly on my terminal**
-- A: Adjust terminal size or modify `_display_header()` width
+### Adding a New Display Style
+Modify the display methods in the `Menu` class to customize appearance.
 
-**Q: Back option appears at top level**
-- A: Normal behavior - back option only shows in submenus
+### Custom Input Handling
+Override `_get_user_choice()` to implement custom input mechanisms.
 
-**Q: Action doesn't execute**
-- A: Verify action function returns True/False and doesn't raise exceptions
+### Adding Themes
+Store theme preferences and apply them in the display methods.
 
-## License
+### Menu Persistence
+Save selected options and automatically restore them on restart.
 
-This is a demonstration project. Feel free to use and modify as needed.
+## 📝 Example Use Cases
 
-## Contributing
+- **System Administration Tools** - Navigate configuration options hierarchically
+- **Data Entry Forms** - Multi-step menu-driven data collection
+- **Game Menus** - Main menu → New Game/Load Game → Difficulty → etc.
+- **CLI Tools** - Command organization in logical menu structure
+- **Educational Tools** - Interactive tutorials with nested modules
+- **Configuration Utilities** - Settings organized by category
 
-To enhance this application:
-1. Add new menu items following the existing patterns
-2. Create action functions with clear purposes
-3. Test navigation at all menu levels
-4. Update documentation for new features
+## 🐛 Troubleshooting
+
+**Q: Menu items not displaying correctly?**
+- A: Check terminal width and adjust if using very small terminal
+
+**Q: Keyboard navigation not working?**
+- A: Ensure you're using a compatible terminal; MSVCRT works on Windows, Curses on Unix/Linux
+
+**Q: Action function not executing?**
+- A: Verify function returns `True` or `False` and doesn't raise unhandled exceptions
+
+**Q: Back option appearing at wrong level?**
+- A: Normal behavior - "Back" only shows in submenus, not at root level
+
+## 📄 License
+
+This project is provided as-is for educational and commercial use.
+
+## 🤝 Contributing
+
+Enhancements welcome:
+1. Add new menu items following existing patterns
+2. Create modular action functions
+3. Test navigation thoroughly
+4. Document new features
+5. Submit improvements
+
+---
+
+**Happy menu building! 🎉**
