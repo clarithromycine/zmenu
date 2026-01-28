@@ -2,8 +2,6 @@
 Test script to verify the framework works with automated input.
 """
 
-import sys
-from io import StringIO
 from unittest.mock import patch
 from zmenu import Menu
 

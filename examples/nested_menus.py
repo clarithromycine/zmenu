@@ -2,7 +2,7 @@
 Advanced example demonstrating nested menus at multiple depth levels.
 """
 
-from zmenu import Menu, MenuItem
+from zmenu import Menu
 
 
 # Action functions

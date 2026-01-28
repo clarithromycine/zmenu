@@ -2,7 +2,7 @@
 Simple example demonstrating basic menu usage.
 """
 
-from zmenu import Menu, MenuItem
+from zmenu import Menu
 
 
 def hello_world():

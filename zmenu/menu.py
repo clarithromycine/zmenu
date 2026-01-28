@@ -3,7 +3,6 @@ Core menu classes for zmenu framework.
 """
 
 import os
-import sys
 from typing import Callable, List, Optional, Any
 
 
@@ -190,6 +189,9 @@ class Menu:
                 
                 if result:  # If there's a submenu
                     result.run()  # Run the submenu
+                    # Check if exit was requested from submenu
+                    if self._exit_requested:
+                        return None
                 else:
                     # Action was executed, pause before continuing
                     input("\nPress Enter to continue...")

@@ -85,6 +85,15 @@ Build menus fluently using method chaining:
 ```python
 from zmenu import Menu
 
+def view_stats():
+    print("Viewing statistics...")
+
+def export_data():
+    print("Exporting data...")
+
+settings_menu = Menu("Settings")
+settings_menu.add_action("Option 1", lambda: print("Option selected"))
+
 menu = (Menu("Dashboard")
     .add_action("View Stats", view_stats)
     .add_action("Export Data", export_data)
@@ -98,6 +107,9 @@ menu.run()
 Create hierarchies at any depth:
 
 ```python
+def generate_report():
+    print("Generating report...")
+
 # Level 3
 reports = Menu("Reports").add_action("Generate", generate_report)
 
