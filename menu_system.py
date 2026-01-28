@@ -20,6 +20,13 @@ try:
 except ImportError:
     HAS_CURSES = False
 
+try:
+    import termios
+    import tty
+    HAS_TERMIOS = True
+except ImportError:
+    HAS_TERMIOS = False
+
 
 class MenuItem:
     """Represents a single menu item."""
@@ -164,6 +171,38 @@ class Menu:
                 print(f"  ➤ {num_items + 1}. Back to {self.parent.title} ◄")
             else:
                 print(f"    {num_items + 1}. Back to {self.parent.title}")
+
+    def _read_key_posix(self) -> Optional[Tuple[str, Optional[str]]]:
+        """Read a single keypress on POSIX systems using raw terminal input."""
+        if not HAS_TERMIOS:
+            return None
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            ch = sys.stdin.read(1)
+            if ch == '\x03':  # Ctrl+C
+                raise KeyboardInterrupt()
+            if ch == '\x1b':  # Escape sequence
+                next1 = sys.stdin.read(1)
+                if next1 == '[':
+                    next2 = sys.stdin.read(1)
+                    if next2 == 'A':
+                        return ('NAV', 'UP')
+                    if next2 == 'B':
+                        return ('NAV', 'DOWN')
+                    if next2 == 'C':
+                        return ('NAV', 'RIGHT')
+                    if next2 == 'D':
+                        return ('NAV', 'LEFT')
+                return ('ESC', None)
+            if ch in ('\r', '\n'):
+                return ('ENTER', None)
+            if ch.isdigit():
+                return ('DIGIT', ch)
+            return ('CHAR', ch)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     
     def _get_user_choice(self, clear_initial: bool = True) -> Optional[str]:
         """
@@ -189,8 +228,8 @@ class Menu:
         while True:
             # Get input
             try:
-                # Try to read keyboard input
-                if HAS_MSVCRT:
+                # Windows arrow-key handling via msvcrt
+                if HAS_MSVCRT and os.name == 'nt':
                     ch = msvcrt.getch()
                     
                     # Check for Ctrl+C
@@ -221,8 +260,32 @@ class Menu:
                                 return 'back'
                         except ValueError:
                             pass
+                # POSIX raw terminal handling
+                elif HAS_TERMIOS and sys.stdin.isatty():
+                    key_info = self._read_key_posix()
+                    if not key_info:
+                        continue
+                    kind, value = key_info
+                    if kind == 'NAV':
+                        if value == 'UP':
+                            selected_idx = (selected_idx - 1) % (max_idx + 1)
+                        elif value == 'DOWN':
+                            selected_idx = (selected_idx + 1) % (max_idx + 1)
+                        self._redraw_menu_in_place(selected_idx)
+                        continue
+                    if kind == 'ENTER':
+                        return self._index_to_key(selected_idx)
+                    if kind == 'DIGIT':
+                        try:
+                            choice_num = int(value)
+                            if 1 <= choice_num <= num_items:
+                                return self._item_order[choice_num - 1]
+                            elif self.parent and choice_num == num_items + 1:
+                                return 'back'
+                        except ValueError:
+                            continue
                 else:
-                    # Fallback for non-Windows systems
+                    # Generic fallback when raw key handling is unavailable
                     choice = input("\nEnter your choice: ").strip()
                     return self._process_choice(choice)
                     
