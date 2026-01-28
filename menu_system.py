@@ -50,18 +50,16 @@ class MenuItem:
 class Menu:
     """Represents a menu with multiple items and support for submenus."""
     
-    def __init__(self, title: str = "Menu", parent: Optional['Menu'] = None, clear_screen_after_action: bool = True):
+    def __init__(self, title: str = "Menu", parent: Optional['Menu'] = None):
         """
         Initialize a menu.
         
         Args:
             title: Display title for the menu
             parent: Parent menu (for navigation back)
-            clear_screen_after_action: Whether to clear screen after executing an action (default: True)
         """
         self.title = title
         self.parent = parent
-        self.clear_screen_after_action = clear_screen_after_action
         self.items: Dict[str, MenuItem] = {}
         self.submenus: Dict[str, 'Menu'] = {}
         self._item_order: List[str] = []
@@ -92,19 +90,18 @@ class Menu:
         self.items[key] = MenuItem(label, action)
         self._item_order.append(key)
     
-    def add_submenu(self, key: str, label: str, clear_screen_after_action: bool = True) -> 'Menu':
+    def add_submenu(self, key: str, label: str) -> 'Menu':
         """
         Add a submenu and return it for further configuration.
         
         Args:
             key: Unique identifier for the submenu
             label: Display text
-            clear_screen_after_action: Whether to clear screen after executing an action (default: True)
         
         Returns:
             The newly created submenu
         """
-        submenu = Menu(title=label, parent=self, clear_screen_after_action=clear_screen_after_action)
+        submenu = Menu(title=label, parent=self)
         self.submenus[key] = submenu
         self.items[key] = MenuItem(label, None)
         self._item_order.append(key)
@@ -310,8 +307,6 @@ class Menu:
                 print(f"\n❌ Error executing action: {e}")
             
             input("\nPress Enter to continue...")
-            if self.clear_screen_after_action:
-                self._clear_screen()
             return True
         
         return True
