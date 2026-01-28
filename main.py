@@ -23,7 +23,7 @@ def setup_application() -> ConsoleApp:
     
     # Add Tools submenu
     # Use clear_screen_after_action=False to keep output visible after actions
-    tools_menu = main_menu.add_submenu("tools", "🛠️  Tools", clear_screen_after_action=True)
+    tools_menu = main_menu.add_submenu("tools", "🛠️  Tools", clear_screen_after_action=False)
     tools_menu.add_item("calc", "Calculator", show_calculator)
     tools_menu.add_item("sysinfo", "System Information", show_system_info)
     

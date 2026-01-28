@@ -76,6 +76,10 @@ class Menu:
         sys.stdout.write('\033[?25h')
         sys.stdout.flush()
     
+    def _clear_screen(self) -> None:
+        """Clear the console screen."""
+        os.system('cls' if os.name == 'nt' else 'clear')
+    
     def add_item(self, key: str, label: str, action: Callable) -> None:
         """
         Add a menu item with an associated action.
