@@ -296,36 +296,6 @@ def get_user_input():
 @MenuItemCmd("y", "Item Y", group="Tools", order=2)
 ```
 
-## 🌍 Cross-Platform Support
-
-### Windows
-- Uses `msvcrt.getch()` for raw input
-- Native support for arrow keys via extended key codes
-- Optimal emoji rendering
-
-### Linux/macOS
-- Uses `termios` + `tty` for raw terminal mode
-- Non-blocking I/O for ESC detection
-- Select-based timeout (0.5s) for arrow key sequences
-- Terminal emulator dependent for emoji rendering
-
-## 🐛 Troubleshooting
-
-**Q: Arrow keys not working reliably on Linux?**
-- A: Ensure terminal is in raw mode. Increase timeout in `_read_key_posix()` if needed.
-
-**Q: ESC key timing out?**
-- A: Non-blocking I/O polls stdin; ESC returns instantly without waiting.
-
-**Q: Inconsistent emoji spacing?**
-- A: Linux terminal rendering varies by emulator. Windows is more consistent.
-
-**Q: Menu items not appearing?**
-- A: Verify `@MenuItemCmd` decorator is applied and `menu.register()` is called.
-
-**Q: Action not executing?**
-- A: Check function returns `True` or `False` and doesn't raise unhandled exceptions.
-
 ## 📝 Example Use Cases
 
 - **System Administration Tools** - Configuration management with nested menus
@@ -334,19 +304,6 @@ def get_user_input():
 - **Data Entry Forms** - Multi-step menu-driven data collection
 - **Educational Tools** - Interactive tutorials with modular content
 - **DevOps Tools** - Infrastructure management with grouped operations
-
-## 📄 Technical Details
-
-### ESC Key Handling (Key Fix)
-- Uses non-blocking I/O (`fcntl.O_NONBLOCK`) on Unix
-- Immediately returns on bare ESC press (no wait)
-- Waits up to 0.5s for arrow key follow-up characters
-- Prevents the "need to press ESC twice" issue
-
-### Terminal Raw Mode
-- Sets `tty.setraw()` for character-by-character input
-- Properly restores terminal state in finally blocks
-- Handles both Windows and Unix terminals
 
 ---
 
