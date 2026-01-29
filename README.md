@@ -28,8 +28,7 @@ zmenu/
 ├── menu_system.py          # Core framework - Menu, MenuItem, MenuItemCmd, ConsoleApp classes
 ├── console_app.py          # Application logic - Menu item definitions and group configuration
 ├── main.py                 # Entry point - Application initialization and setup
-├── README.md               # This file
-└── __pycache__/            # Python bytecode cache
+└── README.md               # This file
 ```
 
 ## 🚀 Quick Start
