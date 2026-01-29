@@ -6,8 +6,12 @@ A flexible and reusable menu framework supporting nested menus.
 from typing import Callable, Dict, List, Optional, Tuple
 import os
 import sys
-import select
-import fcntl
+
+try:    
+    import fcntl
+    HAS_SELECT_FCNTL = True
+except ImportError:
+    HAS_SELECT_FCNTL = False
 
 try:
     import msvcrt
@@ -310,12 +314,12 @@ class Menu:
                     if ch == b'\xe0':  # Extended key
                         ch2 = msvcrt.getch()
                         if ch2 == b'H':  # Up arrow
-                            selected_idx = (selected_idx - 1) % (max_idx + 1)
+                            selected_idx = (selected_idx - 1) % max_idx
                             # Redraw menu in place
                             self._redraw_menu_in_place(selected_idx)
                             continue
                         elif ch2 == b'P':  # Down arrow
-                            selected_idx = (selected_idx + 1) % (max_idx + 1)
+                            selected_idx = (selected_idx + 1) % max_idx
                             # Redraw menu in place
                             self._redraw_menu_in_place(selected_idx)
                             continue
@@ -344,9 +348,9 @@ class Menu:
                     kind, value = key_info
                     if kind == 'NAV':
                         if value == 'UP':
-                            selected_idx = (selected_idx - 1) % (max_idx + 1)
+                            selected_idx = (selected_idx - 1) % max_idx
                         elif value == 'DOWN':
-                            selected_idx = (selected_idx + 1) % (max_idx + 1)
+                            selected_idx = (selected_idx + 1) % max_idx
                         self._redraw_menu_in_place(selected_idx)
                         continue
                     if kind == 'ESC':
