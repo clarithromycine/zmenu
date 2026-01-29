@@ -3,7 +3,8 @@ Example Console Application with Multi-Level Menus
 Demonstrates the menu system with various options and submenus.
 """
 
-from menu_system import ConsoleApp, hello_world, user_greeting, show_calculator
+from console_app import ConsoleApp
+from menu_system import MenuItemCmd, hello_world, user_greeting, show_calculator
 from menu_system import show_system_info, show_about
 
 
@@ -45,6 +46,10 @@ def setup_application() -> ConsoleApp:
     help_menu.add_item("usage", "How to Use", _show_usage)
     help_menu.add_item("keyboard", "Keyboard Shortcuts", _show_shortcuts)
     
+    # Example: Register decorated menu items
+    # You can use @MenuItemCmd decorator and register them with menu.register()
+    main_menu.register(_show_status, _show_time)
+    
     return app
 
 
@@ -77,6 +82,28 @@ def _show_font_options():
 def _set_language(language: str):
     """Set the application language."""
     print(f"\n✅ Language changed to: {language}")
+    return True
+
+
+# Example: Using @MenuItemCmd decorator
+@MenuItemCmd("status", "📊 System Status", order=1)
+def _show_status():
+    """Display application status."""
+    print("\n" + "=" * 60)
+    print("  SYSTEM STATUS")
+    print("=" * 60)
+    print("\n  ✓ Application running normally")
+    print("  ✓ All systems operational")
+    print("  ✓ Ready for commands")
+    return True
+
+
+@MenuItemCmd("time", "🕐 Show Time", order=2)
+def _show_time():
+    """Display current time."""
+    import datetime
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"\n  Current time: {current_time}")
     return True
 
 

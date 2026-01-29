@@ -28,6 +28,41 @@ except ImportError:
     HAS_TERMIOS = False
 
 
+class MenuItemCmd:
+    """Decorator for defining menu items with metadata."""
+    
+    def __init__(self, cmd: str, desc: str, order: int = 0, label: Optional[str] = None):
+        """
+        Initialize a menu item decorator.
+        
+        Args:
+            cmd: Command identifier (unique key for the menu item)
+            desc: Description/display label for the menu item
+            order: Display order in menu (lower numbers appear first)
+            label: Custom display label (if different from desc)
+        """
+        self.cmd = cmd
+        self.desc = desc
+        self.order = order
+        self.label = label or desc
+    
+    def __call__(self, fn: Callable) -> Callable:
+        """
+        Attach metadata to the function and return it.
+        
+        Args:
+            fn: Function to decorate
+        
+        Returns:
+            The decorated function with attached metadata
+        """
+        fn.cmd = self.cmd
+        fn.desc = self.desc
+        fn.order = self.order
+        fn.label = self.label
+        return fn
+
+
 class MenuItem:
     """Represents a single menu item."""
     
@@ -113,6 +148,37 @@ class Menu:
         self.items[key] = MenuItem(label, None)
         self._item_order.append(key)
         return submenu
+    
+    def register(self, *functions: Callable) -> None:
+        """
+        Register decorated menu item functions.
+        
+        Registers functions decorated with @MenuItemCmd.
+        Functions are sorted by order and added to the menu.
+        
+        Args:
+            *functions: Functions decorated with @MenuItemCmd
+        
+        Example:
+            @MenuItemCmd("greet", "👋 Say Hello")
+            def hello():
+                print("Hello!")
+                return True
+            
+            menu.register(hello)
+        """
+        # Collect functions with cmd attribute
+        items_to_register = []
+        for fn in functions:
+            if hasattr(fn, 'cmd'):
+                items_to_register.append((fn.order, fn.cmd, fn.label, fn))
+        
+        # Sort by order
+        items_to_register.sort(key=lambda x: x[0])
+        
+        # Register items
+        for order, cmd, label, fn in items_to_register:
+            self.add_item(cmd, label, fn)
     
     def _redraw_menu_in_place(self, selected_idx: int = 0) -> None:
         """Redraw only the menu items in place.
