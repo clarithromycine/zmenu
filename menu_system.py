@@ -180,7 +180,7 @@ class Menu:
         
         # Redraw menu items
         self._display_items(selected_idx=selected_idx)
-        print("[Use Arrow Keys ↑↓ to navigate, Enter to select, type number, or ESC to go back]")
+        print("[Use Arrow Keys ↑↓ to navigate, Enter to select]")
     
     def _display_header(self, clear: bool = True) -> None:
         """Display the menu header.
@@ -298,7 +298,7 @@ class Menu:
             os.system('cls' if os.name == 'nt' else 'clear')
         self._display_header(clear=False)
         self._display_items(selected_idx=selected_idx)
-        print("[Use Arrow Keys ↑↓ to navigate, Enter to select, type number, or ESC to go back]")
+        print("[Use Arrow Keys ↑↓ to navigate, Enter to select]")
         
         while True:
             # Get input
