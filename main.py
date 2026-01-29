@@ -61,7 +61,7 @@ def main():
     except KeyboardInterrupt:
         # Handle Ctrl+C at the global level
         print("\n\n" + "=" * 60)
-        print("  ⏹️  Application interrupted by user (Ctrl+C)")
+        print("  ⏹️  Application stopped by user")
         print("=" * 60 + "\n")
 
 

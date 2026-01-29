@@ -174,7 +174,7 @@ class Menu:
         
         # Redraw menu items
         self._display_items(selected_idx=selected_idx)
-        print("[Use Arrow Keys ↑↓ to navigate, Enter to select, or type number]")
+        print("[Use Arrow Keys ↑↓ to navigate, Enter to select, type number, or ESC to go back]")
     
     def _display_header(self, clear: bool = True) -> None:
         """Display the menu header.
@@ -289,7 +289,7 @@ class Menu:
             os.system('cls' if os.name == 'nt' else 'clear')
         self._display_header(clear=False)
         self._display_items(selected_idx=selected_idx)
-        print("[Use Arrow Keys ↑↓ to navigate, Enter to select, or type number]")
+        print("[Use Arrow Keys ↑↓ to navigate, Enter to select, type number, or ESC to go back]")
         
         while True:
             # Get input
@@ -314,6 +314,11 @@ class Menu:
                             # Redraw menu in place
                             self._redraw_menu_in_place(selected_idx)
                             continue
+                    elif ch == b'\x1b':  # Escape key
+                        if self.parent:
+                            return 'back'
+                        else:
+                            raise KeyboardInterrupt()
                     elif ch == b'\r':  # Enter - return without clearing
                         return self._index_to_key(selected_idx)
                     elif ch.isdigit():
@@ -339,6 +344,11 @@ class Menu:
                             selected_idx = (selected_idx + 1) % (max_idx + 1)
                         self._redraw_menu_in_place(selected_idx)
                         continue
+                    if kind == 'ESC':
+                        if self.parent:
+                            return 'back'
+                        else:
+                            raise KeyboardInterrupt()
                     if kind == 'ENTER':
                         return self._index_to_key(selected_idx)
                     if kind == 'DIGIT':
