@@ -110,6 +110,7 @@ class Menu:
         self.items: Dict[str, MenuItem] = {}
         self.submenus: Dict[str, 'Menu'] = {}
         self._item_order: List[str] = []
+        self._key_buffer = None  # Buffer for leftover characters from ESC sequence
     
     def _hide_cursor(self) -> None:
         """Hide the cursor using ANSI escape codes."""
@@ -313,33 +314,59 @@ class Menu:
         """Read a single keypress on POSIX systems using raw terminal input."""
         if not HAS_TERMIOS:
             return None
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            ch = sys.stdin.read(1)
-            if ch == '\x03':  # Ctrl+C
-                raise KeyboardInterrupt()
-            if ch == '\x1b':  # Escape sequence
+        
+        # Check if we have a buffered character from previous ESC sequence
+        if self._key_buffer is not None:
+            ch = self._key_buffer
+            self._key_buffer = None
+        else:
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(fd)
+                ch = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        
+        if ch == '\x03':  # Ctrl+C
+            raise KeyboardInterrupt()
+        if ch == '\x1b':  # Escape sequence
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(fd)
                 next1 = sys.stdin.read(1)
-                if next1 == '[':
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            
+            if next1 == '[':
+                fd = sys.stdin.fileno()
+                old_settings = termios.tcgetattr(fd)
+                try:
+                    tty.setraw(fd)
                     next2 = sys.stdin.read(1)
-                    if next2 == 'A':
-                        return ('NAV', 'UP')
-                    if next2 == 'B':
-                        return ('NAV', 'DOWN')
-                    if next2 == 'C':
-                        return ('NAV', 'RIGHT')
-                    if next2 == 'D':
-                        return ('NAV', 'LEFT')
-                return ('ESC', None)
-            if ch in ('\r', '\n'):
-                return ('ENTER', None)
-            if ch.isdigit():
-                return ('DIGIT', ch)
-            return ('CHAR', ch)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                finally:
+                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                
+                if next2 == 'A':
+                    return ('NAV', 'UP')
+                if next2 == 'B':
+                    return ('NAV', 'DOWN')
+                if next2 == 'C':
+                    return ('NAV', 'RIGHT')
+                if next2 == 'D':
+                    return ('NAV', 'LEFT')
+                # Buffer the extra character for next read
+                self._key_buffer = next2
+            else:
+                # Buffer the character that followed ESC
+                self._key_buffer = next1
+            return ('ESC', None)
+        if ch in ('\r', '\n'):
+            return ('ENTER', None)
+        if ch.isdigit():
+            return ('DIGIT', ch)
+        return ('CHAR', ch)
     
     def _get_user_choice(self, clear_initial: bool = True) -> Optional[str]:
         """
