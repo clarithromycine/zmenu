@@ -6,63 +6,21 @@ Main application class for managing menus and application flow.
 from typing import Callable, Optional
 import sys
 import os
-from menu_system import Menu
-
-
-class MenuItemCmd:
-    """Decorator for defining menu items with metadata."""
+from menu_system import Menu, MenuItemCmd
     
-    def __init__(self, cmd: str, desc: str, order: int = 0, label: Optional[str] = None, group: Optional[str] = None, icon: Optional[str] = None):
-        """
-        Initialize a menu item decorator.
-        
-        Args:
-            cmd: Command identifier (unique key for the menu item)
-            desc: Description/display label for the menu item
-            order: Display order in menu (lower numbers appear first)
-            label: Custom display label (if different from desc)
-            group: Dot-separated group path for nested menus (e.g., "Tools.Advanced")
-            icon: Custom icon for this menu item (e.g., "🎮")
-        """
-        self.cmd = cmd      #指令
-        self.label = label or desc #界面显示的指令
-        self.desc = desc    #描述
-        self.order = order  #显示顺序        
-        self.group = group  #分组
-        self.icon = icon    #图标
-    
-    def __call__(self, fn: Callable) -> Callable:
-        """
-        Attach metadata to the function and return it.
-        
-        Args:
-            fn: Function to decorate
-        
-        Returns:
-            The decorated function with attached metadata
-        """
-        fn.cmd = self.cmd
-        fn.label = self.label
-        fn.desc = self.desc
-        fn.order = self.order        
-        fn.group = self.group
-        fn.icon = self.icon
-        return fn
-
-
 class ConsoleApp:
     """Main console application with menu system."""
     
     # Group icons configuration for visual customization
     # Maps group path to icon and display name
-    GROUP_ICONS = {
-        "Tools": ("🛠️", "Tools"),
-        "Settings": ("⚙️", "Settings"),
+    MENU_GROUP_ICONS = {
+        "Tools":            ("🛠️", "Tools"),
+        "Settings":         ("⚙️", "Settings"),
         "Settings.Display": ("📺", "Display Options"),
-        "Settings.Language": ("🌐", "Language"),
-        "Help": ("📖", "Help")
+        "Settings.Language":("🌐", "Language"),
+        "Help":             ("📖", "Help")
     }
-    
+        
     def __init__(self, name: str = "Console App"):
         """
         Initialize the console application.
@@ -80,20 +38,18 @@ class ConsoleApp:
     def run(self) -> None:
         """Run the console application."""
         self.main_menu.display()
-        print("\n" + "=" * 60)
-        print("  Thank you for using the application!")
-        print("=" * 60 + "\n")
+
 
 
 # Example actions for demonstration
-@MenuItemCmd("greeting", "👋 Say Hello", order=0)
+@MenuItemCmd("greeting", "Say Hello", order=0, icon="👋")
 def hello_world():
     """Simple hello world action."""
     print("\n👋 Hello from the console app!")
     return True
 
 
-@MenuItemCmd("user", "👤 Greet User", order=1)
+@MenuItemCmd("user", "Greet User", order=1, icon="👤")
 def user_greeting():
     """Get user input and display greeting."""
     name = input("\nEnter your name: ").strip()
@@ -102,7 +58,7 @@ def user_greeting():
     return True
 
 
-@MenuItemCmd("calc", "🧮 Calculator", order=0, group="Tools")
+@MenuItemCmd("calc", "Calculator", order=0, group="Tools",icon="🧮")
 def show_calculator():
     try:
         num1 = float(input("\nEnter first number: "))
@@ -121,7 +77,7 @@ def show_calculator():
     return True
 
 
-@MenuItemCmd("sysinfo", "ℹ️ System Information", order=1, group="Tools")
+@MenuItemCmd("sysinfo", "System Information", order=1, group="Tools",icon="ℹ️")
 def show_system_info():
     """Display system information."""
     print(f"\nOperating System: {sys.platform}")
@@ -130,7 +86,7 @@ def show_system_info():
     return True
 
 
-@MenuItemCmd("about", "About", order=0, group="Help")
+@MenuItemCmd("about", "About", order=0, group="Help",icon="📖")
 def show_about():
     """Show about information."""
     print("\n" + "=" * 60)
@@ -147,7 +103,7 @@ def show_about():
     return True
 
 
-@MenuItemCmd("theme", "Change Theme", group="Settings.Display")
+@MenuItemCmd("theme", "Change Theme", group="Settings.Display", icon="🎨")
 def show_theme_options():
     """Display theme options."""
     print("\n" + "=" * 60)
@@ -161,7 +117,7 @@ def show_theme_options():
     return True
 
 
-@MenuItemCmd("font", "Change Font Size", group="Settings.Display")
+@MenuItemCmd("font", "Change Font Size", group="Settings.Display", icon="🔠")
 def show_font_options():
     """Display font size options."""
     print("\n" + "=" * 60)
@@ -196,7 +152,7 @@ def set_language_fr():
     return True
 
 
-@MenuItemCmd("status", "📊 System Status", order=1)
+@MenuItemCmd("status", "System Status", order=1, icon="📊")
 def show_status():
     """Display application status."""
     print("\n" + "=" * 60)
@@ -208,7 +164,7 @@ def show_status():
     return True
 
 
-@MenuItemCmd("time", "🕐 Show Time", order=2)
+@MenuItemCmd("time", "Show Time", order=2, icon="🕐")
 def show_time():
     """Display current time."""
     import datetime
@@ -217,7 +173,7 @@ def show_time():
     return True
 
 
-@MenuItemCmd("usage", "How to Use", group="Help")
+@MenuItemCmd("usage", "How to Use", group="Help", icon="❓")
 def show_usage():
     """Show usage instructions."""
     print("\n" + "=" * 60)
@@ -234,7 +190,7 @@ def show_usage():
     return True
 
 
-@MenuItemCmd("keyboard", "Keyboard Shortcuts", group="Help")
+@MenuItemCmd("keyboard", "Keyboard Shortcuts", group="Help", icon="⌨️")
 def show_shortcuts():
     """Show keyboard shortcuts."""
     print("\n" + "=" * 60)

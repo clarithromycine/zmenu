@@ -28,78 +28,45 @@ except ImportError:
     HAS_TERMIOS = False
 
 
+
 class MenuItemCmd:
     """Decorator for defining menu items with metadata."""
     
-    def __init__(self, cmd: str, desc: str, order: int = 0, label: Optional[str] = None):
-        """
-        Initialize a menu item decorator.
-        
-        Args:
-            cmd: Command identifier (unique key for the menu item)
-            desc: Description/display label for the menu item
-            order: Display order in menu (lower numbers appear first)
-            label: Custom display label (if different from desc)
-        """
-        self.cmd = cmd
-        self.desc = desc
-        self.order = order
-        self.label = label or desc
+    def __init__(self, cmd: str, desc: str, order: int = 0, label: Optional[str] = None, group: Optional[str] = None, icon: Optional[str] = None):
+
+        self.cmd = cmd      #指令
+        self.label = label or desc #界面显示的指令
+        self.desc = desc    #描述
+        self.order = order  #显示顺序        
+        self.group = group  #分组
+        self.icon = icon    #图标
     
     def __call__(self, fn: Callable) -> Callable:
-        """
-        Attach metadata to the function and return it.
-        
-        Args:
-            fn: Function to decorate
-        
-        Returns:
-            The decorated function with attached metadata
-        """
+
         fn.cmd = self.cmd
-        fn.desc = self.desc
-        fn.order = self.order
         fn.label = self.label
+        fn.desc = self.desc
+        fn.order = self.order        
+        fn.group = self.group
+        fn.icon = self.icon
         return fn
 
-
 class MenuItem:
-    """Represents a single menu item."""
-    
+    """Represents a single menu item."""    
     def __init__(self, label: str, action: Optional[Callable] = None):
-        """
-        Initialize a menu item.
-        
-        Args:
-            label: Display text for the menu item
-            action: Callable function to execute, or None for submenu marker
-        """
         self.label = label
         self.action = action
     
     def execute(self) -> bool:
-        """
-        Execute the menu item's action.
-        
-        Returns:
-            True if should continue menu, False if should exit
-        """
         if self.action is None:
             return True
         return self.action()
 
 
 class Menu:
-    """Represents a menu with multiple items and support for submenus."""
-    
+    """Represents a menu with multiple items and support for submenus."""    
     def __init__(self, title: str = "Menu", parent: Optional['Menu'] = None):
-        """
-        Initialize a menu.
-        
-        Args:
-            title: Display title for the menu
-            parent: Parent menu (for navigation back)
-        """
+
         self.title = title
         self.parent = parent
         self.items: Dict[str, MenuItem] = {}
@@ -120,7 +87,7 @@ class Menu:
         """Clear the console screen."""
         os.system('cls' if os.name == 'nt' else 'clear')
     
-    def add_item(self, key: str, label: str, action: Callable) -> None:
+    def add_item(self, key: str, label: str, action: Callable, icon: Optional[str] = None) -> None:
         """
         Add a menu item with an associated action.
         
@@ -129,44 +96,16 @@ class Menu:
             label: Display text
             action: Callable function to execute
         """
-        self.items[key] = MenuItem(label, action)
+        if icon:
+            label = icon + " " + label
+        self.items[key] = MenuItem(label, action)        
         self._item_order.append(key)
     
-    def add_submenu(self, key: str, label: str, auto_icon = True) -> 'Menu':
-        """
-        Add a submenu and return it for further configuration.
+    def add_submenu(self, key: str, label: str, icon: Optional[str] = None) -> 'Menu':
         
-        Automatically adds a folder icon (📁) to the label if auto_icon=True,
-        or a custom icon if auto_icon is a string.
-        
-        Args:
-            key: Unique identifier for the submenu
-            label: Display text
-            auto_icon: 
-                - True: Use default folder icon (📁)
-                - False: No icon
-                - str: Use custom icon (e.g., "🛠️")
-        
-        Returns:
-            The newly created submenu
-        """
-        # Add icon based on auto_icon parameter
-        if auto_icon is True:
-            # Use default folder icon
-            folder_icon = "📁 "
-            if not label.startswith(folder_icon):
-                label = folder_icon + label
-        elif isinstance(auto_icon, str):
-            # Use custom icon (string) - first remove default folder icon if present
-            folder_icon = "📁 "
-            if label.startswith(folder_icon):
-                label = label[len(folder_icon):]  # Remove folder icon
+        if icon:
+            label = icon + " " + label
             
-            custom_icon = auto_icon + " "
-            if not label.startswith(custom_icon):
-                label = custom_icon + label
-        # If auto_icon is False, no icon is added
-        
         submenu = Menu(title=label, parent=self)
         self.submenus[key] = submenu
         self.items[key] = MenuItem(label, None)
@@ -174,46 +113,24 @@ class Menu:
         return submenu
     
     def register(self, *functions: Callable) -> None:
-        """
-        Register decorated menu item functions.
-        
-        Registers functions decorated with @MenuItemCmd.
-        Functions are sorted by order and added to the menu.
-        Supports group parameter for nested menu organization with custom icons.
-        
-        Args:
-            *functions: Functions decorated with @MenuItemCmd
-        
-        Example:
-            @MenuItemCmd("greet", "👋 Say Hello", group="General", group_icon="📋")
-            def hello():
-                print("Hello!")
-                return True
-            
-            menu.register(hello)
-        """
+
         # Collect functions with cmd attribute and build group_icon mapping
-        items_to_register = []
-        group_icons = {}  # Track group_icon for each group path
+        items_to_register = []        
         
         for fn in functions:
             if hasattr(fn, 'cmd'):
-                group = getattr(fn, 'group', None)
-                group_icon = getattr(fn, 'group_icon', None)
-                items_to_register.append((fn.order, fn.cmd, fn.label, fn, group, group_icon))
-                
-                # Store the first group_icon found for each group (to avoid duplicates)
-                if group and group_icon and group not in group_icons:
-                    group_icons[group] = group_icon
-        
+                group = getattr(fn, 'group', None)                
+                icon  = getattr(fn, 'icon', None)
+                items_to_register.append((fn.order, fn.cmd, fn.label, fn, group, icon))
+                        
         # Sort by order
         items_to_register.sort(key=lambda x: x[0])
-        
+
         # Track created submenus
         submenus = {}
         
         # Register items, handling group parameter for nested menus
-        for order, cmd, label, fn, group, group_icon in items_to_register:
+        for order, cmd, label, fn, group, icon in items_to_register:
             if group:
                 # Split group path (e.g., "Tools.Advanced" -> ["Tools", "Advanced"])
                 group_path = group.split('.')
@@ -224,16 +141,7 @@ class Menu:
                     submenu_key = '.'.join(group_path[:i+1])
                     
                     if submenu_key not in submenus:
-                        # Create submenu if it doesn't exist
-                        # Use custom group_icon if provided for the final group level
-                        # Otherwise use default folder icon (auto_icon=True)
-                        if i == len(group_path) - 1 and submenu_key in group_icons:
-                            # Use the mapped group_icon for this group
-                            custom_icon = group_icons[submenu_key]
-                            submenu = current_menu.add_submenu(submenu_key, group_name, auto_icon=custom_icon)
-                        else:
-                            # Use default folder icon
-                            submenu = current_menu.add_submenu(submenu_key, group_name, auto_icon=True)
+                        submenu = current_menu.add_submenu(submenu_key, group_name+" >")
                         submenus[submenu_key] = submenu
                     else:
                         submenu = submenus[submenu_key]
@@ -241,10 +149,10 @@ class Menu:
                     current_menu = submenu
                 
                 # Add item to the final submenu
-                current_menu.add_item(cmd, label, fn)
+                current_menu.add_item(cmd, label, fn, icon)
             else:
-                # Add item to root menu
-                self.add_item(cmd, label, fn)
+                # Add item to root menu                
+                self.add_item(cmd, label, fn, icon)
     
     def _redraw_menu_in_place(self, selected_idx: int = 0) -> None:
         """Redraw only the menu items in place.
@@ -468,8 +376,6 @@ class Menu:
             return self._item_order[idx]
         elif self.parent and idx == num_items:
             return 'back'
-        elif idx == num_items + (1 if self.parent else 0):
-            return '0'
         
         return None
     

@@ -9,17 +9,8 @@ from console_app import ConsoleApp
 
 
 def setup_application() -> ConsoleApp:
-    """
-    Configure the console application with menus and actions.
-    
-    All menu items are defined using @MenuItemCmd decorators in console_app.py.
-    This function auto-scans console_app module to discover and register all decorated functions.
-    Group icons are defined here for visual customization.
-    
-    Returns:
-        Configured ConsoleApp instance
-    """
-    app = ConsoleApp("My Console Application")
+
+    app = ConsoleApp("ZMenu Demo App")
     main_menu = app.get_menu()
     
     # Auto-scan console_app module for @MenuItemCmd decorated functions
@@ -34,8 +25,8 @@ def setup_application() -> ConsoleApp:
     main_menu.register(*decorated_functions)
     
     # Apply group icons from app's GROUP_ICONS configuration if it exists
-    if hasattr(app, 'GROUP_ICONS'):
-        for group_path, (icon, display_name) in app.GROUP_ICONS.items():
+    if hasattr(app, 'MENU_GROUP_ICONS'):
+        for group_path, (icon, display_name) in app.MENU_GROUP_ICONS.items():
             # Navigate to the correct menu level
             path_parts = group_path.split('.')
             current_menu = main_menu
@@ -49,12 +40,7 @@ def setup_application() -> ConsoleApp:
             # Get the final key
             final_key = path_parts[-1] if len(path_parts) == 1 else '.'.join(path_parts)
             
-            # Update submenu title and label, plus item label
-            if final_key in current_menu.submenus:
-                submenu = current_menu.submenus[final_key]
-                new_label = f"{icon} {display_name}"
-                submenu.title = new_label  # Update submenu title
-                submenu.label = new_label  # Update submenu label
+
                 
             if final_key in current_menu.items:
                 current_menu.items[final_key].label = f"{icon} {display_name} >"
