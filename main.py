@@ -3,10 +3,7 @@ Example Console Application with Multi-Level Menus
 Demonstrates the menu system with various options and submenus.
 """
 
-import inspect
-import console_app
 from console_app import ConsoleApp
-
 
 def main():
 
