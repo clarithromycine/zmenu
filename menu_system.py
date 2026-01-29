@@ -6,6 +6,8 @@ A flexible and reusable menu framework supporting nested menus.
 from typing import Callable, Dict, List, Optional, Tuple
 import os
 import sys
+import select
+import fcntl
 
 try:
     import msvcrt
@@ -217,50 +219,61 @@ class Menu:
         if not HAS_TERMIOS:
             return None
         
-
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
+        old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
         try:
             tty.setraw(fd)
+            # First character - read immediately
             ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        
-        if ch == '\x03':  # Ctrl+C
-            raise KeyboardInterrupt()
-        if ch == '\x1b':  # Escape sequence
-            fd = sys.stdin.fileno()
-            old_settings = termios.tcgetattr(fd)
-            try:
-                tty.setraw(fd)
-                next1 = sys.stdin.read(1)
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
             
-            if next1 == '[':
-                fd = sys.stdin.fileno()
-                old_settings = termios.tcgetattr(fd)
+            if ch == '\x03':  # Ctrl+C
+                raise KeyboardInterrupt()
+            
+            if ch == '\x1b':  # Escape sequence - try to read more without blocking
+                # Temporarily set non-blocking mode
+                fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
                 try:
-                    tty.setraw(fd)
-                    next2 = sys.stdin.read(1)
+                    next1 = sys.stdin.read(1)
+                except BlockingIOError:
+                    next1 = ''
                 finally:
-                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore blocking mode
                 
-                if next2 == 'A':
-                    return ('NAV', 'UP')
-                if next2 == 'B':
-                    return ('NAV', 'DOWN')
-                if next2 == 'C':
-                    return ('NAV', 'RIGHT')
-                if next2 == 'D':
-                    return ('NAV', 'LEFT')
-
-            return ('ESC', None)
-        if ch in ('\r', '\n'):
-            return ('ENTER', None)
-        if ch.isdigit():
-            return ('DIGIT', ch)
-        return ('CHAR', ch)
+                if not next1:
+                    # No follow-up char = bare ESC press
+                    return ('ESC', None)
+                
+                if next1 == '[':
+                    # Try to read arrow key indicator
+                    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
+                    try:
+                        next2 = sys.stdin.read(1)
+                    except BlockingIOError:
+                        next2 = ''
+                    finally:
+                        fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)
+                    
+                    if next2 == 'A':
+                        return ('NAV', 'UP')
+                    if next2 == 'B':
+                        return ('NAV', 'DOWN')
+                    if next2 == 'C':
+                        return ('NAV', 'RIGHT')
+                    if next2 == 'D':
+                        return ('NAV', 'LEFT')
+                
+                # Not an arrow key, just ESC
+                return ('ESC', None)
+            
+            if ch in ('\r', '\n'):
+                return ('ENTER', None)
+            if ch.isdigit():
+                return ('DIGIT', ch)
+            return ('CHAR', ch)
+        finally:
+            fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore original flags
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     
     def _get_user_choice(self, clear_initial: bool = True) -> Optional[str]:
         """
