@@ -1,6 +1,6 @@
 # ZMenu - Multi-Level Menu Console Application
 
-A flexible and reusable Python framework for building interactive console applications with nested menu support at unlimited depth levels.
+A flexible and reusable Python framework for building interactive console applications with nested menu support at unlimited depth levels. Features decorator-based menu item registration, cross-platform keyboard support, and automatic hierarchy management.
 
 ## 📋 Overview
 
@@ -8,24 +8,28 @@ ZMenu is a modern console application framework that simplifies the creation of 
 
 ## ✨ Features
 
-- **Multi-level nested menus** - Support for unlimited menu depth
-- **Interactive keyboard navigation** - Arrow keys and number input support
-- **Cross-platform compatibility** - Windows (MSVCRT) and Unix/Linux support
-- **Clean, elegant UI** - Formatted headers, visual indicators, and status messages
-- **Easy to extend** - Simple API for adding menu items and submenus
-- **Automatic navigation** - Built-in "Back" option for returning to parent menus
-- **Input validation** - Error handling and input validation included
+- **Multi-level nested menus** - Support for unlimited menu depth with automatic hierarchy
+- **Decorator-based registration** - `@MenuItemCmd` decorators for clean menu item definition
+- **Interactive keyboard navigation** - Arrow keys (↑↓) with 0.5s timeout, number input (1-9), Enter/ESC support
+- **Cross-platform compatibility** - Windows (MSVCRT) and Unix/Linux (termios) native support
+- **Smart ESC handling** - Single ESC press exits menu instantly; arrow key sequences work reliably
+- **Group-based organization** - Automatic submenu creation with dot-notation grouping (e.g., "Settings.Display")
+- **Custom group icons** - Map group paths to custom icons and display names
+- **Visual feedback** - Formatted headers, selection indicators (➤ ◄), and status messages
+- **Clean, elegant UI** - Centered alignment, emoji support, consistent spacing
+- **Error handling** - Input validation and graceful exception handling
 - **Callable actions** - Execute any Python function when a menu item is selected
-- **Visual feedback** - Highlighting for selected menu items with arrow indicators
+- **Automatic "Back" option** - Seamless navigation to parent menus
 
 ## 📁 Project Structure
 
 ```
 zmenu/
-├── menu_system.py          # Core framework - Menu, MenuItem, ConsoleApp classes
-├── main.py                 # Example application demonstrating all features
-├── .gitignore              # Git ignore file for Python projects
-└── README.md               # This file
+├── menu_system.py          # Core framework - Menu, MenuItem, MenuItemCmd, ConsoleApp classes
+├── console_app.py          # Application logic - Menu item definitions and group configuration
+├── main.py                 # Entry point - Application initialization and setup
+├── README.md               # This file
+└── __pycache__/            # Python bytecode cache
 ```
 
 ## 🚀 Quick Start
@@ -44,314 +48,325 @@ python main.py
 
 | Control | Action |
 |---------|--------|
-| **Arrow Keys ↑ ↓** | Move between menu items |
+| **Arrow Keys ↑ ↓** | Move between menu items (0.5s timeout for arrow key sequences) |
 | **Number Keys (1-9)** | Jump directly to a menu item |
 | **Enter** | Select the highlighted menu item |
-| **0** | Exit the application or return to parent menu |
+| **ESC** | Return to parent menu (or exit if at root) |
+| **Ctrl+C** | Force exit from any menu |
 
-## 📊 Example Application Structure
+## 🏗️ Architecture
 
-The included example demonstrates a complete application with multiple levels:
+### File Organization
+
+**menu_system.py** - Core Framework
+- `MenuItemCmd` - Decorator class for menu item metadata
+- `MenuItem` - Individual menu item container
+- `Menu` - Menu management with display and navigation
+- `ConsoleApp` - Application controller
+
+**console_app.py** - Application Definition
+- `ConsoleApp` - Extended with `MENU_GROUP_ICONS` configuration
+- `@MenuItemCmd` decorated action functions
+- Group-based menu organization
+
+**main.py** - Entry Point
+- Auto-discovers decorated functions
+- Registers menu items with hierarchy support
+- Applies group icons
+- Starts the application
+
+### Input Processing Architecture
 
 ```
-My Console Application
-├── 👋 Say Hello
-├── 👤 Greet User
-├── 🛠️  Tools
-│   ├── Calculator
-│   └── System Information
-├── ⚙️  Settings
-│   ├── Display Options
-│   │   ├── Change Theme
-│   │   └── Change Font Size
-│   └── Language
-│       ├── English
-│       ├── Español
-│       └── Français
-└── ❓ Help
-    ├── About
-    ├── How to Use
-    └── Keyboard Shortcuts
+User Input
+    ↓
+_read_key_posix() (Linux) or msvcrt.getch() (Windows)
+    ↓
+ESC Detection
+├─ No follow-up char (0.5s timeout) → Return ('ESC', None) → Exit menu
+└─ Follow-up char '[' detected:
+   ├─ Read 3rd char (0.5s timeout)
+   ├─ Match: A=UP, B=DOWN, C=RIGHT, D=LEFT → Navigate
+   └─ No match or timeout → ESC pressed, exit menu
+    ↓
+Validate choice & Execute action
+    ↓
+Redraw menu or close
+```
+
+### Menu Hierarchy Structure
+
+```
+Root Menu (main)
+├── 👋 Say Hello (immediate action)
+├── 👤 Greet User (immediate action)
+├── 🧮 Tools (submenu - group="Tools")
+│   ├── 🧮 Calculator
+│   └── ℹ️ System Information
+├── 📺 Settings (submenu - group="Settings")
+│   ├── Display Options (submenu - group="Settings.Display")
+│   ├── Language (submenu - group="Settings.Language")
+│   │   ├── English
+│   │   ├── Español
+│   │   └── Français
+├── 📖 Help (submenu - group="Help")
+│   ├── About
+│   └── How to Use
+└── 🕐 Show Time (immediate action)
 ```
 
 ## 📖 API Reference
 
-### `ConsoleApp` - Main Application Class
+### `@MenuItemCmd` - Menu Item Decorator
+
+Define a menu item with metadata:
 
 ```python
-from menu_system import ConsoleApp
-
-app = ConsoleApp("My Application Title")
-main_menu = app.get_menu()  # Get the root menu
-app.run()  # Start the application
+@MenuItemCmd(
+    cmd="unique_key",           # Required: unique identifier
+    desc="Display Label",        # Required: menu label text
+    order=0,                     # Optional: display order (lower first)
+    label="Custom Label",        # Optional: override desc
+    group="GroupName",           # Optional: submenu group (dot-notation supported)
+    icon="🎯"                    # Optional: icon emoji
+)
+def action_function():
+    # Action code
+    return True  # True to keep menu open, False to exit app
 ```
 
-### `Menu.add_item(key, label, action)`
+### `Menu.add_item(key, label, action, icon=None)`
 
-Add an action item to the menu.
+Manually add an action item to the menu:
 
 ```python
 def greet():
     print("Hello!")
     return True
 
-menu.add_item("greet", "👋 Say Hello", greet)
+menu.add_item("greet", "👋 Say Hello", greet, icon="👋")
 ```
 
 **Parameters:**
 - `key` (str): Unique identifier for the item
 - `label` (str): Display text in the menu
 - `action` (callable): Function to execute when selected
+- `icon` (str, optional): Icon emoji prefix
 
-### `Menu.add_submenu(key, label)`
+### `Menu.add_submenu(key, label, icon=None)`
 
-Add a submenu and return it for configuration.
+Manually add a submenu:
 
 ```python
-tools_menu = menu.add_submenu("tools", "🛠️  Tools")
+tools_menu = menu.add_submenu("tools", "Tools", icon="🛠️")
 tools_menu.add_item("calc", "Calculator", show_calculator)
 ```
 
 **Parameters:**
 - `key` (str): Unique identifier for the submenu
 - `label` (str): Display text in the menu
+- `icon` (str, optional): Icon emoji prefix
 
 **Returns:**
 - A new `Menu` object ready for configuration
 
-### `MenuItem` - Individual Menu Item
+### `Menu.register(*functions)`
+
+Register all decorated menu item functions:
 
 ```python
-item = MenuItem("Greet", lambda: print("Hello!"))
-item.execute()  # Output: Hello!
+# Import decorated functions
+from console_app import hello_world, show_calculator
+
+menu.register(hello_world, show_calculator)
 ```
 
-## 🛠️ Creating Your Own Application
+This method:
+- Scans for `@MenuItemCmd` decorators
+- Sorts by order
+- Creates submenus based on `group` parameter
+- Applies group icons if configured
 
-### Basic Example
+### `ConsoleApp` - Application Controller
 
 ```python
-from menu_system import ConsoleApp
+app = ConsoleApp("Application Title")
+menu = app.get_menu()
+menu.register(*decorated_functions)
+app.run()
+```
 
-def on_action_1():
-    print("You selected Action 1!")
+## 💻 Creating Your Own Application
+
+### Step 1: Define Actions with Decorators
+
+```python
+# In console_app.py
+
+@MenuItemCmd("exit_app", "Exit", order=99, icon="❌")
+def exit_app():
+    print("Goodbye!")
+    return False  # Return False to exit
+
+@MenuItemCmd("tool1", "Tool 1", order=0, group="Tools", icon="🔧")
+def use_tool1():
+    print("Tool 1 executing...")
     return True
 
-def on_action_2():
-    print("You selected Action 2!")
+@MenuItemCmd("opt1", "Option 1", order=0, group="Settings", icon="⚙️")
+def set_option1():
+    print("Setting option 1...")
     return True
+```
 
-# Create application
+### Step 2: Configure Group Icons
+
+```python
+class ConsoleApp:
+    MENU_GROUP_ICONS = {
+        "Tools":        ("🛠️", "Tools"),
+        "Settings":     ("⚙️", "Settings"),
+        "Tools.Advanced": ("🔬", "Advanced Tools")
+    }
+```
+
+Format: `"group_path": (icon_emoji, display_name)`
+
+### Step 3: Auto-Register in main.py
+
+```python
+import inspect
+from console_app import ConsoleApp, *  # Import all decorated functions
+
 app = ConsoleApp("My App")
 menu = app.get_menu()
 
-# Add menu items
-menu.add_item("action1", "Action 1", on_action_1)
-menu.add_item("action2", "Action 2", on_action_2)
-
-# Add a submenu
-submenu = menu.add_submenu("settings", "⚙️ Settings")
-submenu.add_item("opt1", "Option 1", lambda: print("Option 1 selected"))
-
-# Run the application
-app.run()
-```
-
-### Key Guidelines
-
-- **Return `True`** from action functions to keep the menu open
-- **Return `False`** to exit the application
-- Use **lambda functions** for simple, one-line actions
-- Use **emoji** in labels for visual appeal (e.g., 👋, 🛠️, ⚙️, ❓)
-- **Nested submenus** work at any depth level
-
-### Advanced Example - Multi-Level Settings
-
-```python
-from menu_system import ConsoleApp
-
-app = ConsoleApp("Settings App")
-menu = app.get_menu()
-
-# Create Settings submenu
-settings = menu.add_submenu("settings", "⚙️ Settings")
-
-# Add nested Display submenu
-display = settings.add_submenu("display", "Display")
-display.add_item("theme", "Change Theme", lambda: print("Theme changed"))
-display.add_item("size", "Font Size", lambda: print("Font size adjusted"))
-
-# Add nested Audio submenu
-audio = settings.add_submenu("audio", "Audio")
-audio.add_item("vol", "Volume", lambda: print("Volume adjusted"))
-audio.add_item("mute", "Mute", lambda: print("Toggled mute"))
+# Auto-discover decorated functions
+decorated = [fn for name, fn in inspect.getmembers(console_app, 
+             predicate=inspect.isfunction) if hasattr(fn, 'cmd')]
+menu.register(*decorated)
 
 app.run()
 ```
 
-## 💾 Action Function Best Practices
+## 🔑 Key Concepts
 
-### Simple Action
+### Order Parameter
+Controls display sequence (lower numbers appear first):
 ```python
-def simple_action():
-    print("Action executed!")
-    return True  # Continue menu
-
-menu.add_item("simple", "Simple Action", simple_action)
+@MenuItemCmd("first", "First Item", order=1)
+@MenuItemCmd("second", "Second Item", order=2)
+@MenuItemCmd("third", "Third Item", order=3)
 ```
 
-### Action with User Input
+### Group Parameter
+Creates hierarchical submenus using dot notation:
 ```python
-def action_with_input():
+@MenuItemCmd("display", "Display", group="Settings")           # Submenu of Settings
+@MenuItemCmd("theme", "Theme", group="Settings.Display")       # Sub-submenu
+@MenuItemCmd("darkmode", "Dark Mode", group="Settings.Display") # Same level as theme
+```
+
+### Return Values
+- **`True`** - Keep menu open (wait for next user action)
+- **`False`** - Exit application immediately
+
+### Icon Usage
+- Use emoji for visual appeal: 👋, 🛠️, ⚙️, 📖, ❓
+- Icons are automatically prefixed to labels
+- Group icons override item icons
+
+## 🎯 Best Practices
+
+### 1. Use Decorators for All Menu Items
+```python
+@MenuItemCmd("key", "Label", order=0)
+def my_action():
+    return True
+```
+
+### 2. Organize with Groups
+```python
+@MenuItemCmd("a", "Item A", group="Category")
+@MenuItemCmd("b", "Item B", group="Category")
+```
+
+### 3. Handle Errors Gracefully
+```python
+@MenuItemCmd("user_input", "Get Input")
+def get_user_input():
     try:
-        name = input("Enter your name: ")
-        print(f"Hello, {name}!")
+        value = input("Enter value: ")
+        # Process value
         return True
     except Exception as e:
         print(f"Error: {e}")
         return True  # Stay in menu
-
-menu.add_item("greet", "Greet User", action_with_input)
 ```
 
-### Action with Data Processing
+### 4. Use Consistent Ordering
 ```python
-def calculate():
-    try:
-        a = float(input("Enter first number: "))
-        b = float(input("Enter second number: "))
-        result = a + b
-        print(f"Sum: {result}")
-        return True
-    except ValueError:
-        print("Please enter valid numbers")
-        return True
+# Root level
+@MenuItemCmd("a", "First", order=1)
+@MenuItemCmd("b", "Second", order=2)
+@MenuItemCmd("c", "Exit", order=99)
 
-menu.add_item("calc", "Add Numbers", calculate)
+# In groups
+@MenuItemCmd("x", "Item X", group="Tools", order=1)
+@MenuItemCmd("y", "Item Y", group="Tools", order=2)
 ```
 
-## 🏗️ Technical Architecture
+## 🌍 Cross-Platform Support
 
-### Core Classes
+### Windows
+- Uses `msvcrt.getch()` for raw input
+- Native support for arrow keys via extended key codes
+- Optimal emoji rendering
 
-**MenuItem**
-- Represents a single menu item
-- Stores label and optional action callable
-- `execute()` method runs the associated action
-
-**Menu**
-- Manages a collection of menu items and submenus
-- Handles display formatting and layout
-- Processes user input (keyboard and number)
-- Maintains parent-child relationships for hierarchy
-
-**ConsoleApp**
-- Top-level application controller
-- Manages the root menu
-- Provides `run()` method to start the application loop
-
-### Input Processing Flow
-
-```
-User Input (keyboard or number)
-    ↓
-Validate input (is it a valid choice?)
-    ↓
-Execute action or navigate submenu
-    ↓
-Display result
-    ↓
-Redraw menu (or close if exit)
-```
-
-## 🎨 Customization Tips
-
-### Use Emojis for Visual Appeal
-```python
-menu.add_item("calc", "🧮 Calculator", show_calculator)
-menu.add_item("info", "ℹ️ System Info", show_system_info)
-menu.add_item("gear", "⚙️ Settings", show_settings)
-```
-
-### Organize Related Options
-Group related menu items in submenus for better UX:
-```python
-tools = menu.add_submenu("tools", "🛠️ Tools")
-tools.add_item("calc", "Calculator", calculator)
-tools.add_item("conv", "Converter", converter)
-```
-
-### Handle Exceptions Gracefully
-Always wrap user input in try-except blocks to prevent crashes.
-
-### Test Navigation Thoroughly
-Verify that:
-- All menu items are accessible
-- Back/exit options work at all levels
-- No infinite loops or dead ends exist
-
-## 📋 Features Implemented
-
-✅ Multi-level menu support (unlimited depth)
-✅ Interactive keyboard navigation
-✅ Number-based direct selection
-✅ Automatic "Back" option in submenus
-✅ Clean, formatted console output
-✅ Error handling and input validation
-✅ Cross-platform support
-✅ Visual indicators (arrows, highlighting)
-✅ Easy extensibility
-✅ Built-in example application
-
-## 🔧 Extending the Framework
-
-### Adding a New Display Style
-Modify the display methods in the `Menu` class to customize appearance.
-
-### Custom Input Handling
-Override `_get_user_choice()` to implement custom input mechanisms.
-
-### Adding Themes
-Store theme preferences and apply them in the display methods.
-
-### Menu Persistence
-Save selected options and automatically restore them on restart.
-
-## 📝 Example Use Cases
-
-- **System Administration Tools** - Navigate configuration options hierarchically
-- **Data Entry Forms** - Multi-step menu-driven data collection
-- **Game Menus** - Main menu → New Game/Load Game → Difficulty → etc.
-- **CLI Tools** - Command organization in logical menu structure
-- **Educational Tools** - Interactive tutorials with nested modules
-- **Configuration Utilities** - Settings organized by category
+### Linux/macOS
+- Uses `termios` + `tty` for raw terminal mode
+- Non-blocking I/O for ESC detection
+- Select-based timeout (0.5s) for arrow key sequences
+- Terminal emulator dependent for emoji rendering
 
 ## 🐛 Troubleshooting
 
-**Q: Menu items not displaying correctly?**
-- A: Check terminal width and adjust if using very small terminal
+**Q: Arrow keys not working reliably on Linux?**
+- A: Ensure terminal is in raw mode. Increase timeout in `_read_key_posix()` if needed.
 
-**Q: Keyboard navigation not working?**
-- A: Ensure you're using a compatible terminal; MSVCRT works on Windows, Curses on Unix/Linux
+**Q: ESC key timing out?**
+- A: Non-blocking I/O polls stdin; ESC returns instantly without waiting.
 
-**Q: Action function not executing?**
-- A: Verify function returns `True` or `False` and doesn't raise unhandled exceptions
+**Q: Inconsistent emoji spacing?**
+- A: Linux terminal rendering varies by emulator. Windows is more consistent.
 
-**Q: Back option appearing at wrong level?**
-- A: Normal behavior - "Back" only shows in submenus, not at root level
+**Q: Menu items not appearing?**
+- A: Verify `@MenuItemCmd` decorator is applied and `menu.register()` is called.
 
-## 📄 License
+**Q: Action not executing?**
+- A: Check function returns `True` or `False` and doesn't raise unhandled exceptions.
 
-This project is provided as-is for educational and commercial use.
+## 📝 Example Use Cases
 
-## 🤝 Contributing
+- **System Administration Tools** - Configuration management with nested menus
+- **Interactive CLI Tools** - Command-line interfaces with hierarchical commands
+- **Game Menus** - Main menu → Game → Settings → Audio/Video
+- **Data Entry Forms** - Multi-step menu-driven data collection
+- **Educational Tools** - Interactive tutorials with modular content
+- **DevOps Tools** - Infrastructure management with grouped operations
 
-Enhancements welcome:
-1. Add new menu items following existing patterns
-2. Create modular action functions
-3. Test navigation thoroughly
-4. Document new features
-5. Submit improvements
+## 📄 Technical Details
+
+### ESC Key Handling (Key Fix)
+- Uses non-blocking I/O (`fcntl.O_NONBLOCK`) on Unix
+- Immediately returns on bare ESC press (no wait)
+- Waits up to 0.5s for arrow key follow-up characters
+- Prevents the "need to press ESC twice" issue
+
+### Terminal Raw Mode
+- Sets `tty.setraw()` for character-by-character input
+- Properly restores terminal state in finally blocks
+- Handles both Windows and Unix terminals
 
 ---
 
