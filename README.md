@@ -75,26 +75,7 @@ python main.py
 - Applies group icons
 - Starts the application
 
-### Input Processing Architecture
-
-```
-User Input
-    ↓
-_read_key_posix() (Linux) or msvcrt.getch() (Windows)
-    ↓
-ESC Detection
-├─ No follow-up char (0.5s timeout) → Return ('ESC', None) → Exit menu
-└─ Follow-up char '[' detected:
-   ├─ Read 3rd char (0.5s timeout)
-   ├─ Match: A=UP, B=DOWN, C=RIGHT, D=LEFT → Navigate
-   └─ No match or timeout → ESC pressed, exit menu
-    ↓
-Validate choice & Execute action
-    ↓
-Redraw menu or close
-```
-
-### Menu Hierarchy Structure
+### Demo Menu Hierarchy Structure
 
 ```
 Root Menu (main)
