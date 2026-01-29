@@ -77,14 +77,6 @@ def main():
         print("\n\n" + "=" * 60)
         print("  ⏹️  Application interrupted by user (Ctrl+C)")
         print("=" * 60 + "\n")
-    except Exception as e:
-        # Handle ESC key exit or other exceptions
-        if e.__class__.__name__ == 'ESCKeyExit':
-            print("\n\n" + "=" * 60)
-            print("  ⏹️  Application exited by user (ESC)")
-            print("=" * 60 + "\n")
-        else:
-            raise
 
 
 if __name__ == "__main__":

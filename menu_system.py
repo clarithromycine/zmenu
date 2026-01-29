@@ -7,11 +7,6 @@ from typing import Callable, Dict, List, Optional, Tuple
 import os
 import sys
 
-
-class ESCKeyExit(Exception):
-    """Exception raised when ESC key is pressed at root menu."""
-    pass
-
 try:
     import msvcrt
     import sys as sys_module
@@ -110,7 +105,6 @@ class Menu:
         self.items: Dict[str, MenuItem] = {}
         self.submenus: Dict[str, 'Menu'] = {}
         self._item_order: List[str] = []
-        self._key_buffer = None  # Buffer for leftover characters from ESC sequence
     
     def _hide_cursor(self) -> None:
         """Hide the cursor using ANSI escape codes."""
@@ -414,11 +408,6 @@ class Menu:
                             continue
                     elif ch == b'\r':  # Enter - return without clearing
                         return self._index_to_key(selected_idx)
-                    elif ch == b'\x1b':  # ESC key - go back or exit
-                        if self.parent:
-                            return 'back'
-                        else:
-                            raise ESCKeyExit()  # Exit at root menu
                     elif ch.isdigit():
                         choice = ch.decode().strip()
                         try:
@@ -444,12 +433,6 @@ class Menu:
                         continue
                     if kind == 'ENTER':
                         return self._index_to_key(selected_idx)
-                    if kind == 'ESC':
-                        # ESC key - go back to parent menu or exit at root
-                        if self.parent:
-                            return 'back'
-                        else:
-                            raise ESCKeyExit()  # Exit at root menu
                     if kind == 'DIGIT':
                         try:
                             choice_num = int(value)
