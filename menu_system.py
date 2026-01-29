@@ -7,6 +7,11 @@ from typing import Callable, Dict, List, Optional, Tuple
 import os
 import sys
 
+
+class ESCKeyExit(Exception):
+    """Exception raised when ESC key is pressed at root menu."""
+    pass
+
 try:
     import msvcrt
     import sys as sys_module
@@ -132,17 +137,41 @@ class Menu:
         self.items[key] = MenuItem(label, action)
         self._item_order.append(key)
     
-    def add_submenu(self, key: str, label: str) -> 'Menu':
+    def add_submenu(self, key: str, label: str, auto_icon = True) -> 'Menu':
         """
         Add a submenu and return it for further configuration.
+        
+        Automatically adds a folder icon (📁) to the label if auto_icon=True,
+        or a custom icon if auto_icon is a string.
         
         Args:
             key: Unique identifier for the submenu
             label: Display text
+            auto_icon: 
+                - True: Use default folder icon (📁)
+                - False: No icon
+                - str: Use custom icon (e.g., "🛠️")
         
         Returns:
             The newly created submenu
         """
+        # Add icon based on auto_icon parameter
+        if auto_icon is True:
+            # Use default folder icon
+            folder_icon = "📁 "
+            if not label.startswith(folder_icon):
+                label = folder_icon + label
+        elif isinstance(auto_icon, str):
+            # Use custom icon (string) - first remove default folder icon if present
+            folder_icon = "📁 "
+            if label.startswith(folder_icon):
+                label = label[len(folder_icon):]  # Remove folder icon
+            
+            custom_icon = auto_icon + " "
+            if not label.startswith(custom_icon):
+                label = custom_icon + label
+        # If auto_icon is False, no icon is added
+        
         submenu = Menu(title=label, parent=self)
         self.submenus[key] = submenu
         self.items[key] = MenuItem(label, None)
@@ -155,30 +184,72 @@ class Menu:
         
         Registers functions decorated with @MenuItemCmd.
         Functions are sorted by order and added to the menu.
+        Supports group parameter for nested menu organization with custom icons.
         
         Args:
             *functions: Functions decorated with @MenuItemCmd
         
         Example:
-            @MenuItemCmd("greet", "👋 Say Hello")
+            @MenuItemCmd("greet", "👋 Say Hello", group="General", group_icon="📋")
             def hello():
                 print("Hello!")
                 return True
             
             menu.register(hello)
         """
-        # Collect functions with cmd attribute
+        # Collect functions with cmd attribute and build group_icon mapping
         items_to_register = []
+        group_icons = {}  # Track group_icon for each group path
+        
         for fn in functions:
             if hasattr(fn, 'cmd'):
-                items_to_register.append((fn.order, fn.cmd, fn.label, fn))
+                group = getattr(fn, 'group', None)
+                group_icon = getattr(fn, 'group_icon', None)
+                items_to_register.append((fn.order, fn.cmd, fn.label, fn, group, group_icon))
+                
+                # Store the first group_icon found for each group (to avoid duplicates)
+                if group and group_icon and group not in group_icons:
+                    group_icons[group] = group_icon
         
         # Sort by order
         items_to_register.sort(key=lambda x: x[0])
         
-        # Register items
-        for order, cmd, label, fn in items_to_register:
-            self.add_item(cmd, label, fn)
+        # Track created submenus
+        submenus = {}
+        
+        # Register items, handling group parameter for nested menus
+        for order, cmd, label, fn, group, group_icon in items_to_register:
+            if group:
+                # Split group path (e.g., "Tools.Advanced" -> ["Tools", "Advanced"])
+                group_path = group.split('.')
+                
+                # Navigate/create nested menus
+                current_menu = self
+                for i, group_name in enumerate(group_path):
+                    submenu_key = '.'.join(group_path[:i+1])
+                    
+                    if submenu_key not in submenus:
+                        # Create submenu if it doesn't exist
+                        # Use custom group_icon if provided for the final group level
+                        # Otherwise use default folder icon (auto_icon=True)
+                        if i == len(group_path) - 1 and submenu_key in group_icons:
+                            # Use the mapped group_icon for this group
+                            custom_icon = group_icons[submenu_key]
+                            submenu = current_menu.add_submenu(submenu_key, group_name, auto_icon=custom_icon)
+                        else:
+                            # Use default folder icon
+                            submenu = current_menu.add_submenu(submenu_key, group_name, auto_icon=True)
+                        submenus[submenu_key] = submenu
+                    else:
+                        submenu = submenus[submenu_key]
+                    
+                    current_menu = submenu
+                
+                # Add item to the final submenu
+                current_menu.add_item(cmd, label, fn)
+            else:
+                # Add item to root menu
+                self.add_item(cmd, label, fn)
     
     def _redraw_menu_in_place(self, selected_idx: int = 0) -> None:
         """Redraw only the menu items in place.
@@ -316,6 +387,11 @@ class Menu:
                             continue
                     elif ch == b'\r':  # Enter - return without clearing
                         return self._index_to_key(selected_idx)
+                    elif ch == b'\x1b':  # ESC key - go back or exit
+                        if self.parent:
+                            return 'back'
+                        else:
+                            raise ESCKeyExit()  # Exit at root menu
                     elif ch.isdigit():
                         choice = ch.decode().strip()
                         try:
@@ -341,6 +417,12 @@ class Menu:
                         continue
                     if kind == 'ENTER':
                         return self._index_to_key(selected_idx)
+                    if kind == 'ESC':
+                        # ESC key - go back to parent menu or exit at root
+                        if self.parent:
+                            return 'back'
+                        else:
+                            raise ESCKeyExit()  # Exit at root menu
                     if kind == 'DIGIT':
                         try:
                             choice_num = int(value)

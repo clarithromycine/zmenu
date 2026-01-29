@@ -3,14 +3,18 @@ Example Console Application with Multi-Level Menus
 Demonstrates the menu system with various options and submenus.
 """
 
+import inspect
+import console_app
 from console_app import ConsoleApp
-from menu_system import MenuItemCmd, hello_world, user_greeting, show_calculator
-from menu_system import show_system_info, show_about
 
 
 def setup_application() -> ConsoleApp:
     """
     Configure the console application with menus and actions.
+    
+    All menu items are defined using @MenuItemCmd decorators in console_app.py.
+    This function auto-scans console_app module to discover and register all decorated functions.
+    Group icons are defined here for visual customization.
     
     Returns:
         Configured ConsoleApp instance
@@ -18,120 +22,44 @@ def setup_application() -> ConsoleApp:
     app = ConsoleApp("My Console Application")
     main_menu = app.get_menu()
     
-    # Add main menu items
-    main_menu.add_item("greeting", "👋 Say Hello", hello_world)
-    main_menu.add_item("user", "👤 Greet User", user_greeting)
+    # Auto-scan console_app module for @MenuItemCmd decorated functions
+    decorated_functions = []
+    members = inspect.getmembers(console_app, predicate=inspect.isfunction)
+    for name, fn in members:
+        if hasattr(fn, 'cmd'):  # Check if function has MenuItemCmd decorator
+            decorated_functions.append(fn)
     
-    # Add Tools submenu
-    tools_menu = main_menu.add_submenu("tools", "🛠️  Tools")
-    tools_menu.add_item("calc", "Calculator", show_calculator)
-    tools_menu.add_item("sysinfo", "System Information", show_system_info)
+    # Register all discovered menu items
+    # The group parameter automatically creates nested menu structure
+    main_menu.register(*decorated_functions)
     
-    # Add Settings submenu
-    settings_menu = main_menu.add_submenu("settings", "⚙️  Settings")
-    
-    # Add nested submenus under Settings
-    display_menu = settings_menu.add_submenu("display", "Display Options")
-    display_menu.add_item("theme", "Change Theme", lambda: _show_theme_options())
-    display_menu.add_item("font", "Change Font Size", lambda: _show_font_options())
-    
-    language_menu = settings_menu.add_submenu("language", "Language")
-    language_menu.add_item("en", "English", lambda: _set_language("English"))
-    language_menu.add_item("es", "Español", lambda: _set_language("Español"))
-    language_menu.add_item("fr", "Français", lambda: _set_language("Français"))
-    
-    # Add Help submenu
-    help_menu = main_menu.add_submenu("help", "❓ Help")
-    help_menu.add_item("about", "About", show_about)
-    help_menu.add_item("usage", "How to Use", _show_usage)
-    help_menu.add_item("keyboard", "Keyboard Shortcuts", _show_shortcuts)
-    
-    # Example: Register decorated menu items
-    # You can use @MenuItemCmd decorator and register them with menu.register()
-    main_menu.register(_show_status, _show_time)
+    # Apply group icons from app's GROUP_ICONS configuration if it exists
+    if hasattr(app, 'GROUP_ICONS'):
+        for group_path, (icon, display_name) in app.GROUP_ICONS.items():
+            # Navigate to the correct menu level
+            path_parts = group_path.split('.')
+            current_menu = main_menu
+            
+            # Navigate to parent menu if nested
+            for i in range(len(path_parts) - 1):
+                submenu_key = '.'.join(path_parts[:i+1])
+                if submenu_key in current_menu.submenus:
+                    current_menu = current_menu.submenus[submenu_key]
+            
+            # Get the final key
+            final_key = path_parts[-1] if len(path_parts) == 1 else '.'.join(path_parts)
+            
+            # Update submenu title and label, plus item label
+            if final_key in current_menu.submenus:
+                submenu = current_menu.submenus[final_key]
+                new_label = f"{icon} {display_name}"
+                submenu.title = new_label  # Update submenu title
+                submenu.label = new_label  # Update submenu label
+                
+            if final_key in current_menu.items:
+                current_menu.items[final_key].label = f"{icon} {display_name} >"
     
     return app
-
-
-def _show_theme_options():
-    """Display theme options."""
-    print("\n" + "=" * 60)
-    print("  THEME OPTIONS")
-    print("=" * 60)
-    print("\n  Available themes:")
-    print("    • Light")
-    print("    • Dark")
-    print("    • High Contrast")
-    print("\n  [This is a demonstration - feature not fully implemented]")
-    return True
-
-
-def _show_font_options():
-    """Display font size options."""
-    print("\n" + "=" * 60)
-    print("  FONT SIZE OPTIONS")
-    print("=" * 60)
-    print("\n  Available sizes:")
-    print("    • Small (8pt)")
-    print("    • Medium (12pt)")
-    print("    • Large (16pt)")
-    print("\n  [This is a demonstration - feature not fully implemented]")
-    return True
-
-
-def _set_language(language: str):
-    """Set the application language."""
-    print(f"\n✅ Language changed to: {language}")
-    return True
-
-
-# Example: Using @MenuItemCmd decorator
-@MenuItemCmd("status", "📊 System Status", order=1)
-def _show_status():
-    """Display application status."""
-    print("\n" + "=" * 60)
-    print("  SYSTEM STATUS")
-    print("=" * 60)
-    print("\n  ✓ Application running normally")
-    print("  ✓ All systems operational")
-    print("  ✓ Ready for commands")
-    return True
-
-
-@MenuItemCmd("time", "🕐 Show Time", order=2)
-def _show_time():
-    """Display current time."""
-    import datetime
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\n  Current time: {current_time}")
-    return True
-
-
-def _show_usage():
-    """Show usage instructions."""
-    print("\n" + "=" * 60)
-    print("  HOW TO USE")
-    print("=" * 60)
-    print("\n1. Navigate using menu numbers")
-    print("2. Press 0 to exit the current menu or application")
-    print("3. Use 'Back' option to return to previous menu")
-    print("4. Follow on-screen prompts for actions")
-    print("\nExample Navigation:")
-    print("  Main Menu → Tools → Calculator")
-    print("           → Settings → Display → Theme")
-    print("           → Help → About")
-    return True
-
-
-def _show_shortcuts():
-    """Show keyboard shortcuts."""
-    print("\n" + "=" * 60)
-    print("  KEYBOARD SHORTCUTS")
-    print("=" * 60)
-    print("\n  0 - Exit current menu or application")
-    print("  1-9 - Navigate to menu option (depends on menu size)")
-    print("\n  Note: Shortcuts are number-based for menu navigation")
-    return True
 
 
 def main():
@@ -149,6 +77,14 @@ def main():
         print("\n\n" + "=" * 60)
         print("  ⏹️  Application interrupted by user (Ctrl+C)")
         print("=" * 60 + "\n")
+    except Exception as e:
+        # Handle ESC key exit or other exceptions
+        if e.__class__.__name__ == 'ESCKeyExit':
+            print("\n\n" + "=" * 60)
+            print("  ⏹️  Application exited by user (ESC)")
+            print("=" * 60 + "\n")
+        else:
+            raise
 
 
 if __name__ == "__main__":
