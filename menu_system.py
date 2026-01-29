@@ -9,9 +9,9 @@ import sys
 
 try:    
     import fcntl
-    HAS_SELECT_FCNTL = True
+    HAS_FCNTL = True
 except ImportError:
-    HAS_SELECT_FCNTL = False
+    HAS_FCNTL = False
 
 try:
     import msvcrt
@@ -49,12 +49,12 @@ class MenuItemCmd:
     
     def __call__(self, fn: Callable) -> Callable:
 
-        fn.cmd = self.cmd
+        fn.cmd   = self.cmd
         fn.label = self.label
-        fn.desc = self.desc
+        fn.desc  = self.desc
         fn.order = self.order        
         fn.group = self.group
-        fn.icon = self.icon
+        fn.icon  = self.icon
         return fn
 
 class MenuItem:
@@ -294,8 +294,8 @@ class Menu:
         selected_idx = 0
         
         # Initial display
-        if clear_initial:
-            os.system('cls' if os.name == 'nt' else 'clear')
+        #if clear_initial:
+        #    os.system('cls' if os.name == 'nt' else 'clear')
         self._display_header(clear=False)
         self._display_items(selected_idx=selected_idx)
         print("[Use Arrow Keys ↑↓ to navigate, Enter to select]")
@@ -481,84 +481,11 @@ class Menu:
             self._show_cursor()  # Ensure cursor is shown when exiting menu
 
 
-class ConsoleApp:
-    """Main console application with menu system."""
-    
-    def __init__(self, name: str = "Console App"):
-        """
-        Initialize the console application.
-        
-        Args:
-            name: Application name
-        """
-        self.name = name
-        self.main_menu = Menu(title=name)
-    
-    def get_menu(self) -> Menu:
-        """Get the main menu for configuration."""
-        return self.main_menu
-    
-    def run(self) -> None:
-        """Run the console application."""
-        self.main_menu.display()
-        print("\n" + "=" * 60)
-        print("  Thank you for using the application!")
-        print("=" * 60 + "\n")
 
 
-# Example actions for demonstration
-def hello_world():
-    """Simple hello world action."""
-    print("\n👋 Hello from the console app!")
-    return True
 
 
-def user_greeting():
-    """Get user input and display greeting."""
-    name = input("\nEnter your name: ").strip()
-    if name:
-        print(f"\n👋 Hello, {name}! Nice to meet you.")
-    return True
 
 
-def show_calculator():
-    """Simple calculator demonstration."""
-    try:
-        num1 = float(input("\nEnter first number: "))
-        num2 = float(input("Enter second number: "))
-        
-        print(f"\n  {num1} + {num2} = {num1 + num2}")
-        print(f"  {num1} - {num2} = {num1 - num2}")
-        print(f"  {num1} × {num2} = {num1 * num2}")
-        if num2 != 0:
-            print(f"  {num1} ÷ {num2} = {num1 / num2}")
-        else:
-            print(f"  Division by zero not allowed")
-    except ValueError:
-        print("\n❌ Invalid number input")
-    
-    return True
 
 
-def show_system_info():
-    """Display system information."""
-    print(f"\nOperating System: {sys.platform}")
-    print(f"Python Version: {sys.version.split()[0]}")
-    print(f"Current Directory: {os.getcwd()}")
-    return True
-
-
-def show_about():
-    """Show about information."""
-    print("\n" + "=" * 60)
-    print("  Multi-Level Menu Console Application")
-    print("=" * 60)
-    print("\nThis application demonstrates a flexible menu system")
-    print("that supports multiple levels of nested menus.")
-    print("\nFeatures:")
-    print("  • Nested menu support")
-    print("  • Easy to extend with new options")
-    print("  • Clean, user-friendly interface")
-    print("  • Error handling and input validation")
-    print("=" * 60)
-    return True
