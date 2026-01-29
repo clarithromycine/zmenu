@@ -217,18 +217,14 @@ class Menu:
         if not HAS_TERMIOS:
             return None
         
-        # Check if we have a buffered character from previous ESC sequence
-        if self._key_buffer is not None:
-            ch = self._key_buffer
-            self._key_buffer = None
-        else:
-            fd = sys.stdin.fileno()
-            old_settings = termios.tcgetattr(fd)
-            try:
-                tty.setraw(fd)
-                ch = sys.stdin.read(1)
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         
         if ch == '\x03':  # Ctrl+C
             raise KeyboardInterrupt()
@@ -258,11 +254,7 @@ class Menu:
                     return ('NAV', 'RIGHT')
                 if next2 == 'D':
                     return ('NAV', 'LEFT')
-                # Buffer the extra character for next read
-                self._key_buffer = next2
-            else:
-                # Buffer the character that followed ESC
-                self._key_buffer = next1
+
             return ('ESC', None)
         if ch in ('\r', '\n'):
             return ('ENTER', None)
