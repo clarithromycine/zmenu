@@ -56,13 +56,13 @@ class ConsoleApp:
     }
 
     # Menu item action methods
-    @MenuItemCmd("greeting", "Say Hello", order=0, icon="👋")
+    @MenuItemCmd("greeting", "Say Hello", order=0, icon="👋", long_desc="Display a friendly greeting message")
     def hello_world(self):
         """Simple hello world action."""
         print("\n👋 Hello from the console app!")
         return True
 
-    @MenuItemCmd("user", "Greet User", order=1, icon="👤")
+    @MenuItemCmd("user", "Greet User", order=1, icon="👤", long_desc="Ask for user name and display personalized greeting")
     def user_greeting(self):
         """Get user input and display greeting."""
         name = input("\nEnter your name: ").strip()
@@ -70,7 +70,7 @@ class ConsoleApp:
             print(f"\n👋 Hello, {name}! Nice to meet you.")
         return True
 
-    @MenuItemCmd("calc", "Calculator", order=0, group="Tools", icon="🧮")
+    @MenuItemCmd("calc", "Calculator", order=0, group="Tools", icon="🧮", long_desc="Perform basic arithmetic operations")
     def show_calculator(self):
         """Simple calculator demonstration."""
         try:
@@ -89,7 +89,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("sysinfo", "System Information", order=1, group="Tools", icon="ℹ️")
+    @MenuItemCmd("sysinfo", "System Information", order=1, group="Tools", icon="ℹ️", long_desc="Display system and environment details")
     def show_system_info(self):
         """Display system information."""
         print(f"\nOperating System: {sys.platform}")
@@ -97,7 +97,7 @@ class ConsoleApp:
         print(f"Current Directory: {os.getcwd()}")
         return True
 
-    @MenuItemCmd("about", "About", order=0, group="Help", icon="📖")
+    @MenuItemCmd("about", "About", order=0, group="Help", icon="📖", long_desc="Learn about this application")
     def show_about(self):
         """Show about information."""
         print("\n" + "=" * 60)
@@ -113,7 +113,7 @@ class ConsoleApp:
         print("=" * 60)
         return True
 
-    @MenuItemCmd("theme", "Change Theme", group="Settings.Display", icon="🎨")
+    @MenuItemCmd("theme", "Change Theme", group="Settings.Display", icon="🎨", long_desc="Customize the visual appearance")
     def show_theme_options(self):
         """Display theme options."""
         print("\n" + "=" * 60)
@@ -126,7 +126,7 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("font", "Change Font Size", group="Settings.Display", icon="🔠")
+    @MenuItemCmd("font", "Change Font Size", group="Settings.Display", icon="🔠", long_desc="Adjust text size for better readability")
     def show_font_options(self):
         """Display font size options."""
         print("\n" + "=" * 60)
@@ -139,25 +139,25 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("en", "English", group="Settings.Language")
+    @MenuItemCmd("en", "English", group="Settings.Language", long_desc="Set interface language to English")
     def set_language_en(self):
         """Set language to English."""
         print(f"\n✅ Language changed to: English")
         return True
 
-    @MenuItemCmd("es", "Español", group="Settings.Language")
+    @MenuItemCmd("es", "Español", group="Settings.Language", long_desc="Cambiar idioma de interfaz al español")
     def set_language_es(self):
         """Set language to Español."""
         print(f"\n✅ Language changed to: Español")
         return True
 
-    @MenuItemCmd("fr", "Français", group="Settings.Language")
+    @MenuItemCmd("fr", "Français", group="Settings.Language", long_desc="Définir la langue de l'interface au français")
     def set_language_fr(self):
         """Set language to Français."""
         print(f"\n✅ Language changed to: Français")
         return True
 
-    @MenuItemCmd("status", "System Status", order=1, icon="📊")
+    @MenuItemCmd("status", "System Status", order=1, icon="📊", long_desc="Check the current operational status of the application")
     def show_status(self):
         """Display application status."""
         print("\n" + "=" * 60)
@@ -168,14 +168,14 @@ class ConsoleApp:
         print("  ✓ Ready for commands")
         return True
 
-    @MenuItemCmd("time", "Show Time", order=2, icon="🕐")
+    @MenuItemCmd("time", "Show Time", order=2, icon="🕐", long_desc="Display the current date and time")
     def show_time(self):
         """Display current time."""
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"\n  Current time: {current_time}")
         return True
 
-    @MenuItemCmd("usage", "How to Use", group="Help", icon="❓")
+    @MenuItemCmd("usage", "How to Use", group="Help", icon="❓", long_desc="Learn how to navigate and use this application")
     def show_usage(self):
         """Show usage instructions."""
         print("\n" + "=" * 60)
@@ -190,7 +190,7 @@ class ConsoleApp:
         print("           → Help → About")
         return True
 
-    @MenuItemCmd("keyboard", "Keyboard Shortcuts", group="Help", icon="⌨️")
+    @MenuItemCmd("keyboard", "Keyboard Shortcuts", group="Help", icon="⌨️", long_desc="View available keyboard shortcuts and navigation keys")
     def show_shortcuts(self):
         """Show keyboard shortcuts."""
         print("\n" + "=" * 60)
@@ -200,4 +200,20 @@ class ConsoleApp:
         print("  1-9 - Navigate to menu option (depends on menu size)")
         print("  ESC - Go back to parent menu (or exit at root menu)")
         print("\n  Note: Shortcuts are number-based for menu navigation")
+        return True
+    @MenuItemCmd("confirm", "Confirm Demo", order=3, icon="✓", long_desc="Test the yes/no selection with arrow keys")
+    def confirm_demo(self):
+        """Demonstrate the yes/no prompt with left/right arrow keys."""
+        result = self.main_menu.yes_no_prompt(
+            question="Do you want to continue?",
+            description="Use LEFT/RIGHT arrow keys to select, then press ENTER"
+        )
+        
+        if result is True:
+            print("\n✓ You selected: YES")
+        elif result is False:
+            print("\n✗ You selected: NO")
+        else:
+            print("\n⊘ You cancelled the operation")
+        
         return True
