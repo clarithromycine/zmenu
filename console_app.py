@@ -232,44 +232,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form", "Form Demo", order=6, icon="📋", long_desc="Fill out an interactive form with multiple field types")
-    def form_demo(self):
-        """Demonstrate the interactive form system."""
-        form_system = FormSystem()
-        
-        # Load form from JSON file
-        form_file = os.path.join(os.path.dirname(__file__), 'form_example.json')
-        
-        if not os.path.exists(form_file):
-            print(f"\n❌ 表单文件未找到: {form_file}")
-            return True
-        
-        try:
-            form_data = form_system.load_form_from_file(form_file)
-            form_definition = form_data.get('form', {})
-            
-            # Process the form
-            results = form_system.process_form(form_definition)
-            
-            # Check if form was cancelled (results is None)
-            if results is None:
-                return True
-            
-            # Display results
-            form_system.print_results(results)
-            
-            # Save results
-            result_file = os.path.join(os.path.dirname(__file__), 'form_result.json')
-            form_system.save_results(results, result_file)
-            
-        except json.JSONDecodeError:
-            print(f"\n❌ 表单文件格式错误")
-        except Exception as e:
-            print(f"\n❌ 错误: {str(e)}")
-        
-        return True
-
-    @MenuItemCmd("form_interactive", "Form Interactive Mode", order=7, icon="📝", long_desc="Form with immediate field processing (interactive mode)")
+    @MenuItemCmd("form_interactive", "Form Interactive Mode", order=6, icon="📝", long_desc="Form with immediate field processing (interactive mode)")
     def form_interactive_demo(self):
         """Demonstrate the form system in interactive mode with field callbacks."""
         # Create a handler object with callback methods
@@ -303,7 +266,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form_submit", "Form Submit Mode", order=8, icon="📤", long_desc="Form with automatic submission (submit mode)")
+    @MenuItemCmd("form_submit", "Form Submit Mode", order=7, icon="📤", long_desc="Form with automatic submission (submit mode)")
     def form_submit_demo(self):
         """Demonstrate the form system in submit mode."""
         # Initialize FormSystem in submit mode
