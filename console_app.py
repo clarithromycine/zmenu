@@ -2,8 +2,9 @@
 Console Application with Menu System
 Main application class for managing menus and application flow.
 """
-import sys, os, inspect, datetime
+import sys, os, inspect, datetime, json
 from menu_system import Menu, MenuItemCmd
+from form_system import FormSystem
     
 class ConsoleApp:
     """Main console application with menu system."""
@@ -239,5 +240,38 @@ class ConsoleApp:
             print("\n✓ Selected items:")
             for item in selected:
                 print(f"  • {item['label']}")
+        
+        return True
+
+    @MenuItemCmd("form", "Form Demo", order=5, icon="📋", long_desc="Fill out an interactive form with multiple field types")
+    def form_demo(self):
+        """Demonstrate the interactive form system."""
+        form_system = FormSystem()
+        
+        # Load form from JSON file
+        form_file = os.path.join(os.path.dirname(__file__), 'form_example.json')
+        
+        if not os.path.exists(form_file):
+            print(f"\n❌ 表单文件未找到: {form_file}")
+            return True
+        
+        try:
+            form_data = form_system.load_form_from_file(form_file)
+            form_definition = form_data.get('form', {})
+            
+            # Process the form
+            results = form_system.process_form(form_definition)
+            
+            # Display results
+            form_system.print_results(results)
+            
+            # Save results
+            result_file = os.path.join(os.path.dirname(__file__), 'form_result.json')
+            form_system.save_results(results, result_file)
+            
+        except json.JSONDecodeError:
+            print(f"\n❌ 表单文件格式错误")
+        except Exception as e:
+            print(f"\n❌ 错误: {str(e)}")
         
         return True

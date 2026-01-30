@@ -413,7 +413,7 @@ class Menu:
         sys.stdout.write('\033[3A')  # Move up 3 lines
         sys.stdout.write('\033[2K')  # Clear the line
         sys.stdout.write('\r')       # Return to start of line
-        sys.stdout.write(f"  {yes_text}          {no_text}\n")
+        sys.stdout.write(f"  {yes_text} / {no_text}\n")
         sys.stdout.write('\033[3B')  # Move down 3 lines back to input position
         sys.stdout.flush()
     
@@ -446,7 +446,7 @@ class Menu:
                 if first_time:
                     yes_text = f"\033[38;5;208m➤ YES\033[0m" if selected == 0 else "  YES"
                     no_text = f"\033[38;5;208m➤ NO\033[0m" if selected == 1 else "  NO"
-                    print(f"  {yes_text}          {no_text}")
+                    print(f"  {yes_text} / {no_text}")
                     print("\n[Use Arrow Keys ← → to select, Enter to confirm]")
                     first_time = False
                 

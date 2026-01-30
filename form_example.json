@@ -1,0 +1,82 @@
+{
+  "form": {
+    "id": "user_registration_form",
+    "title": "用户注册表单",
+    "description": "请填写以下信息完成注册",
+    "icon": "📝",
+    "fields": [
+      {
+        "id": "name",
+        "type": "text",
+        "label": "姓名",
+        "description": "请输入您的全名",
+        "placeholder": "张三",
+        "required": true,
+        "validation": {
+          "minLength": 2,
+          "maxLength": 20
+        }
+      },
+      {
+        "id": "email",
+        "type": "text",
+        "label": "邮箱地址",
+        "description": "请输入您的邮箱",
+        "placeholder": "user@example.com",
+        "required": true
+      },
+      {
+        "id": "country",
+        "type": "single_choice",
+        "label": "选择国家/地区",
+        "description": "请选择您所在的国家",
+        "required": true,
+        "options": [
+          { "value": "cn", "label": "🇨🇳 中国" },
+          { "value": "us", "label": "🇺🇸 美国" },
+          { "value": "uk", "label": "🇬🇧 英国" },
+          { "value": "jp", "label": "🇯🇵 日本" },
+          { "value": "sg", "label": "🇸🇬 新加坡" }
+        ]
+      },
+      {
+        "id": "interests",
+        "type": "multi_choice",
+        "label": "选择您的兴趣",
+        "description": "可以选择多个",
+        "required": false,
+        "options": [
+          { "value": "sports", "label": "🏀 运动" },
+          { "value": "music", "label": "🎵 音乐" },
+          { "value": "tech", "label": "💻 科技" },
+          { "value": "travel", "label": "✈️ 旅游" },
+          { "value": "cooking", "label": "👨‍🍳 烹饪" },
+          { "value": "reading", "label": "📚 阅读" }
+        ]
+      },
+      {
+        "id": "subscription",
+        "type": "single_choice",
+        "label": "选择订阅类型",
+        "description": "请选择您的订阅计划",
+        "required": true,
+        "options": [
+          { "value": "free", "label": "免费版 - ¥0/月" },
+          { "value": "pro", "label": "专业版 - ¥99/月" },
+          { "value": "enterprise", "label": "企业版 - 联系我们" }
+        ]
+      },
+      {
+        "id": "bio",
+        "type": "text",
+        "label": "个人简介",
+        "description": "请简要介绍您自己（可选）",
+        "placeholder": "我是一个...",
+        "required": false,
+        "validation": {
+          "maxLength": 100
+        }
+      }
+    ]
+  }
+}
