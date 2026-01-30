@@ -307,7 +307,7 @@ class Menu:
             label = item['label']
             
             sys.stdout.write('\033[2K')  # Clear entire line
-            sys.stdout.write(f"\r{highlight}|  {checkbox} {label}{reset}\n")
+            sys.stdout.write(f"\r{highlight}  {checkbox} {label}{reset}\n")
         
         # Move down to instruction line
         sys.stdout.write(f'\033[{num_items}B')
@@ -329,7 +329,7 @@ class Menu:
             selected_idx = 0
             
             # Display header
-            print("\n*  " + title)
+            print("\n  " + title)
             
             # Display items
             for idx, item in enumerate(items):
@@ -338,7 +338,7 @@ class Menu:
                 reset = "\033[0m" if idx == selected_idx else ""
                 label = item['label']
                 
-                print(f"{highlight}|  {checkbox} {label}{reset}")
+                print(f"{highlight}  {checkbox} {label}{reset}")
             
             print("\n[Use Arrow Keys ↑↓ to navigate, SPACE to toggle, Enter to confirm]")
             

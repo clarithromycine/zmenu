@@ -201,7 +201,7 @@ class ConsoleApp:
         print("  ESC - Go back to parent menu (or exit at root menu)")
         print("\n  Note: Shortcuts are number-based for menu navigation")
         return True
-    @MenuItemCmd("confirm", "Confirm Demo", order=3, icon="✓", long_desc="Test the yes/no selection with arrow keys")
+    @MenuItemCmd("confirm", "Confirm Demo", order=3, icon="✅", long_desc="Test the yes/no selection with arrow keys")
     def confirm_demo(self):
         """Demonstrate the yes/no prompt with left/right arrow keys."""
         result = self.main_menu.yes_no_prompt(
@@ -221,18 +221,17 @@ class ConsoleApp:
     @MenuItemCmd("multi", "Multi-Select Demo", order=4, icon="☑️", long_desc="Test multi-select with checkboxes")
     def multi_select_demo(self):
         """Demonstrate the multi-select prompt."""
-        items = [
-            {"label": "Skip for now", "description": "", "selected": False},
-            {"label": "🔐 1password", "description": "Password manager", "selected": False},
-            {"label": "📝 apple-notes", "description": "Apple Notes integration", "selected": False},
-            {"label": "⏰ apple-reminders", "description": "Manage Apple Reminders", "selected": True},
-            {"label": "🐻 bear-notes", "description": "Bear Notes support", "selected": False},
-            {"label": "🐦 bird", "description": "Twitter/X CLI", "selected": False},
-            {"label": "📰 blogwatcher", "description": "Blog monitoring", "selected": False},
-            {"label": "🫐 blucli", "description": "Bluetooth CLI", "selected": False},
+        items = [            
+            {"label": "🌐 Enable Dark Mode", "description": "Use dark theme across the application", "selected": False},
+            {"label": "🔔 Enable Notifications", "description": "Show system notifications", "selected": True},
+            {"label": "📊 Analytics", "description": "Send usage analytics", "selected": False},
+            {"label": "🔒 Enable Two-Factor Auth", "description": "Require 2FA for login", "selected": True},
+            {"label": "🌍 Auto-Update", "description": "Automatically check for updates", "selected": False},
+            {"label": "💾 Auto-Save", "description": "Automatically save your work", "selected": True},
+            {"label": "🔊 Sound Effects", "description": "Enable UI sound effects", "selected": False},
         ]
         
-        selected = self.main_menu.multi_select_prompt("Install missing skill dependencies", items)
+        selected = self.main_menu.multi_select_prompt("Select packages to install", items)
         
         if selected is None:
             print("\n⊘ Selection cancelled")
