@@ -217,3 +217,28 @@ class ConsoleApp:
             print("\n⊘ You cancelled the operation")
         
         return True
+
+    @MenuItemCmd("multi", "Multi-Select Demo", order=4, icon="☑️", long_desc="Test multi-select with checkboxes")
+    def multi_select_demo(self):
+        """Demonstrate the multi-select prompt."""
+        items = [
+            {"label": "Skip for now", "description": "", "selected": False},
+            {"label": "🔐 1password", "description": "Password manager", "selected": False},
+            {"label": "📝 apple-notes", "description": "Apple Notes integration", "selected": False},
+            {"label": "⏰ apple-reminders", "description": "Manage Apple Reminders", "selected": True},
+            {"label": "🐻 bear-notes", "description": "Bear Notes support", "selected": False},
+            {"label": "🐦 bird", "description": "Twitter/X CLI", "selected": False},
+            {"label": "📰 blogwatcher", "description": "Blog monitoring", "selected": False},
+            {"label": "🫐 blucli", "description": "Bluetooth CLI", "selected": False},
+        ]
+        
+        selected = self.main_menu.multi_select_prompt("Install missing skill dependencies", items)
+        
+        if selected is None:
+            print("\n⊘ Selection cancelled")
+        else:
+            print("\n✓ Selected items:")
+            for item in selected:
+                print(f"  • {item['label']}")
+        
+        return True

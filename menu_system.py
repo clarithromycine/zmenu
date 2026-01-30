@@ -288,6 +288,119 @@ class Menu:
             fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore original flags
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     
+    def _redraw_multi_select_in_place(self, items: List[dict], selected_idx: int) -> None:
+        """Redraw the multi-select list in place.
+        
+        Args:
+            items: List of {label, description, selected} dicts
+            selected_idx: Current selected index
+        """
+        # Move cursor up to start of list (items + instruction + blank = num_items + 2)
+        num_items = len(items)
+        sys.stdout.write(f'\033[{num_items + 2}A')  # Move up all items + blank + instruction
+        
+        # Redraw all items
+        for idx, item in enumerate(items):
+            checkbox = "[•]" if item['selected'] else "[ ]"
+            highlight = "\033[91m" if idx == selected_idx else ""
+            reset = "\033[0m" if idx == selected_idx else ""
+            label = item['label']
+            
+            sys.stdout.write('\033[2K')  # Clear entire line
+            sys.stdout.write(f"\r{highlight}|  {checkbox} {label}{reset}\n")
+        
+        # Move down to instruction line
+        sys.stdout.write(f'\033[{num_items}B')
+        sys.stdout.flush()
+    
+    def multi_select_prompt(self, title: str, items: List[dict], allow_empty: bool = False) -> List[dict]:
+        """Display a multi-select prompt with checkboxes.
+        
+        Args:
+            title: Title to display
+            items: List of {label, description, selected} dicts
+            allow_empty: Whether to allow all items to be deselected
+        
+        Returns:
+            List of selected items
+        """
+        self._hide_cursor()
+        try:
+            selected_idx = 0
+            
+            # Display header
+            print("\n*  " + title)
+            
+            # Display items
+            for idx, item in enumerate(items):
+                checkbox = "[•]" if item['selected'] else "[ ]"
+                highlight = "\033[91m" if idx == selected_idx else ""
+                reset = "\033[0m" if idx == selected_idx else ""
+                label = item['label']
+                
+                print(f"{highlight}|  {checkbox} {label}{reset}")
+            
+            print("\n[Use Arrow Keys ↑↓ to navigate, SPACE to toggle, Enter to confirm]")
+            
+            while True:
+                try:
+                    if HAS_MSVCRT and os.name == 'nt':
+                        ch = msvcrt.getch()
+                        
+                        if ch == b'\x03':  # Ctrl+C
+                            raise KeyboardInterrupt()
+                        
+                        if ch == b'\xe0':  # Extended key
+                            ch2 = msvcrt.getch()
+                            if ch2 == b'H':  # Up arrow
+                                selected_idx = (selected_idx - 1) % len(items)
+                                self._redraw_multi_select_in_place(items, selected_idx)
+                                continue
+                            elif ch2 == b'P':  # Down arrow
+                                selected_idx = (selected_idx + 1) % len(items)
+                                self._redraw_multi_select_in_place(items, selected_idx)
+                                continue
+                        elif ch == b' ':  # Space to toggle
+                            items[selected_idx]['selected'] = not items[selected_idx]['selected']
+                            self._redraw_multi_select_in_place(items, selected_idx)
+                            continue
+                        elif ch == b'\r':  # Enter to confirm
+                            return [item for item in items if item['selected']]
+                        elif ch == b'\x1b':  # Escape
+                            return None
+                    
+                    elif HAS_TERMIOS and sys.stdin.isatty():
+                        key_info = self._read_key_posix()
+                        if not key_info:
+                            continue
+                        kind, value = key_info
+                        
+                        if kind == 'NAV':
+                            if value == 'UP':
+                                selected_idx = (selected_idx - 1) % len(items)
+                                self._redraw_multi_select_in_place(items, selected_idx)
+                            elif value == 'DOWN':
+                                selected_idx = (selected_idx + 1) % len(items)
+                                self._redraw_multi_select_in_place(items, selected_idx)
+                            continue
+                        if kind == 'CHAR' and value == ' ':  # Space to toggle
+                            items[selected_idx]['selected'] = not items[selected_idx]['selected']
+                            self._redraw_multi_select_in_place(items, selected_idx)
+                            continue
+                        if kind == 'ENTER':
+                            return [item for item in items if item['selected']]
+                        if kind == 'ESC':
+                            return None
+                    else:
+                        choice = input("\nPress SPACE to toggle, Enter to confirm: ").strip()
+                        if choice == '':
+                            return [item for item in items if item['selected']]
+                        
+                except KeyboardInterrupt:
+                    raise
+        finally:
+            self._show_cursor()
+    
     def _redraw_yes_no_in_place(self, selected: int) -> None:
         """Redraw only the yes/no selection line in place.
         
