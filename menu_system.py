@@ -302,7 +302,7 @@ class Menu:
         # Redraw all items
         for idx, item in enumerate(items):
             checkbox = "[•]" if item['selected'] else "[ ]"
-            highlight = "\033[91m" if idx == selected_idx else ""
+            highlight = "\033[38;5;208m" if idx == selected_idx else ""
             reset = "\033[0m" if idx == selected_idx else ""
             label = item['label']
             
@@ -334,7 +334,7 @@ class Menu:
             # Display items
             for idx, item in enumerate(items):
                 checkbox = "[•]" if item['selected'] else "[ ]"
-                highlight = "\033[91m" if idx == selected_idx else ""
+                highlight = "\033[38;5;208m" if idx == selected_idx else ""
                 reset = "\033[0m" if idx == selected_idx else ""
                 label = item['label']
                 
