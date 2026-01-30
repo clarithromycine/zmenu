@@ -10,12 +10,15 @@ ZMenu is a modern console application framework that simplifies the creation of 
 
 - **Multi-level nested menus** - Support for unlimited menu depth with automatic hierarchy
 - **Decorator-based registration** - `@MenuItemCmd` decorators for clean menu item definition
-- **Interactive keyboard navigation** - Arrow keys (↑↓) with 0.5s timeout, number input (1-9), Enter/ESC support
+- **Interactive keyboard navigation** - Arrow keys (↑↓) with automatic menu item updates
+- **Yes/No Selection** - Left/Right arrow keys with real-time updates for boolean choices
+- **Multi-Select Checkboxes** - Up/Down arrow keys with Space to toggle, for multiple selections
+- **Long descriptions** - Display inline descriptions when navigating to menu items
 - **Cross-platform compatibility** - Windows (MSVCRT) and Unix/Linux (termios) native support
 - **Smart ESC handling** - Single ESC press exits menu instantly; arrow key sequences work reliably
 - **Group-based organization** - Automatic submenu creation with dot-notation grouping (e.g., "Settings.Display")
 - **Custom group icons** - Map group paths to custom icons and display names
-- **Visual feedback** - Formatted headers, selection indicators (➤ ◄), and status messages
+- **Visual feedback** - Formatted headers, colored selection indicators, and status messages
 - **Clean, elegant UI** - Centered alignment, emoji support, consistent spacing
 - **Error handling** - Input validation and graceful exception handling
 - **Callable actions** - Execute any Python function when a menu item is selected
@@ -296,12 +299,64 @@ def get_user_input():
 @MenuItemCmd("y", "Item Y", group="Tools", order=2)
 ```
 
+## 🎯 Interactive Prompts
+
+### Yes/No Selection
+
+Display a boolean choice with left/right arrow navigation:
+
+```python
+result = menu.yes_no_prompt(
+    question="Do you want to continue?",
+    description="Use LEFT/RIGHT arrow keys to select"
+)
+
+if result is True:
+    print("User selected: YES")
+elif result is False:
+    print("User selected: NO")
+else:
+    print("User cancelled (Escape)")
+```
+
+**Navigation:**
+- **Left/Right Arrows**: Switch between YES and NO
+- **Enter**: Confirm selection
+- **Escape**: Cancel
+
+### Multi-Select Checkboxes
+
+Display a list of items with checkbox selection:
+
+```python
+items = [
+    {"label": "Option 1", "description": "First choice", "selected": False},
+    {"label": "Option 2", "description": "Second choice", "selected": True},
+    {"label": "Option 3", "description": "Third choice", "selected": False},
+]
+
+selected = menu.multi_select_prompt("Select items:", items)
+
+if selected is None:
+    print("Selection cancelled")
+else:
+    for item in selected:
+        print(f"Selected: {item['label']}")
+```
+
+**Navigation:**
+- **Up/Down Arrows**: Navigate items
+- **Space**: Toggle checkbox for current item
+- **Enter**: Confirm selection
+- **Escape**: Cancel
+
 ## 📝 Example Use Cases
 
 - **System Administration Tools** - Configuration management with nested menus
 - **Interactive CLI Tools** - Command-line interfaces with hierarchical commands
 - **Game Menus** - Main menu → Game → Settings → Audio/Video
-- **Data Entry Forms** - Multi-step menu-driven data collection
+- **Data Entry Forms** - Multi-step menu-driven data collection with confirmations
+- **Package/Dependency Management** - Multi-select with yes/no confirmations
 - **Educational Tools** - Interactive tutorials with modular content
 - **DevOps Tools** - Infrastructure management with grouped operations
 
