@@ -24,9 +24,13 @@ class ConsoleApp:
             if hasattr(method, 'cmd'):  
                 decorated_methods.append(method)
         
-        main_menu.register(*decorated_methods)
+        # Pass MENU_GROUP to register method for validation
+        main_menu.register(*decorated_methods, allowed_groups=self.MENU_GROUP)
         
-        for group_path, (icon, display_name) in self.MENU_GROUP_ICONS.items():
+        # Update group icons and names, and collect group info
+        for group_path, group_config in self.MENU_GROUP.items():
+            icon = group_config.get("icon", "")
+            display_name = group_config.get("name", "")
             
             path_parts = group_path.split('.')
             current_menu = main_menu
@@ -40,17 +44,60 @@ class ConsoleApp:
             
             if final_key in current_menu.items:
                 current_menu.items[final_key].label = f"{icon} {display_name} >"
+        
+        # Re-sort root menu items based on order from MENU_GROUP and MenuItemCmd
+        self._resort_menu(main_menu)
 
-
+    def _resort_menu(self, menu: Menu) -> None:
+        """Re-sort menu items based on MENU_GROUP and MenuItemCmd orders.
+        
+        Sorting priority:
+        1. Items without group and items with group are mixed and sorted by their order
+        2. Items without group use MenuItemCmd order
+        3. Groups use MENU_GROUP order
+        """
+        # Build order map for all items
+        item_order_map = {}
+        
+        # Collect order from decorated methods
+        members = inspect.getmembers(self, predicate=inspect.ismethod)
+        for name, method in members:
+            if hasattr(method, 'cmd'):
+                cmd = getattr(method, 'cmd', None)
+                order = getattr(method, 'order', 0)
+                group = getattr(method, 'group', None)
+                if group is None:
+                    # Root menu items: (order_value, item_key)
+                    item_order_map[cmd] = (order, cmd)
+        
+        # Collect group orders from MENU_GROUP
+        for group_key, group_config in self.MENU_GROUP.items():
+            # Only consider first-level groups (no dot in name)
+            if '.' not in group_key:
+                group_order = group_config.get('order', 999)
+                item_order_map[group_key] = (group_order, group_key)
+        
+        # Sort menu._item_order based on the order value
+        def get_sort_key(key):
+            if key in item_order_map:
+                order_val, item_key = item_order_map[key]
+                return (order_val, item_key)
+            else:
+                # Items not in map go to the end
+                return (999, key)
+        
+        menu._item_order.sort(key=get_sort_key)
     
     def run(self) -> None:
         self.main_menu.display()
 
-    # Group icons configuration for visual customization
-    # Maps group path to icon and display name
-    MENU_GROUP_ICONS = {
-        "Tools":            ("🛠️", "Tools"),
-        "nLevel":         ("📁", "N-Level Menu Demo")
+    # Group configuration for visual customization and ordering
+    # Only groups defined here will be displayed
+    MENU_GROUP = {
+        "Tools":                  {"icon": "🛠️", "name": "Tools", "order": 1},
+        "nLevel":                 {"icon": "📁", "name": "N-Level Menu Demo", "order": 2},
+        "nLevel.Display":         {"icon": "📺", "name": "Display Options", "order": 1},
+        "nLevel.Language":        {"icon": "🌐", "name": "Language", "order": 2}
     }
 
     # Menu item action methods
@@ -60,7 +107,7 @@ class ConsoleApp:
         print("\n👋 Hello from the console app!")
         return True
 
-    @MenuItemCmd("calc", "Calculator", order=5, group="Tools", icon="🧮", long_desc="Perform basic arithmetic operations")
+    @MenuItemCmd("calc", "Calculator", order=0, group="Tools", icon="🧮", long_desc="Perform basic arithmetic operations")
     def show_calculator(self):
         """Simple calculator demonstration."""
         try:
@@ -81,7 +128,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("sysinfo", "System Information", order=5, group="Tools", icon="ℹ️", long_desc="Display system and environment details")
+    @MenuItemCmd("sysinfo", "System Information", order=1, group="Tools", icon="ℹ️", long_desc="Display system and environment details")
     def show_system_info(self):
         """Display system information."""
         print(f"\nOperating System: {sys.platform}")
@@ -134,7 +181,7 @@ class ConsoleApp:
         return True
 
 
-    @MenuItemCmd("time", "Show Time", group="Tools",order=5, icon="🕐", long_desc="Display the current date and time")
+    @MenuItemCmd("time", "Show Time", order=2, group="Tools", icon="🕐", long_desc="Display the current date and time")
     def show_time(self):
         """Display current time."""
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -158,7 +205,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("multi", "Multi-Select Demo", order=4, icon="☑️", long_desc="Test multi-select with checkboxes")
+    @MenuItemCmd("multi", "Multi-Select Demo", order=5, icon="☑️", long_desc="Test multi-select with checkboxes")
     def multi_select_demo(self):
         """Demonstrate the multi-select prompt."""
         try:
@@ -185,7 +232,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form", "Form Demo", order=5, icon="📋", long_desc="Fill out an interactive form with multiple field types")
+    @MenuItemCmd("form", "Form Demo", order=6, icon="📋", long_desc="Fill out an interactive form with multiple field types")
     def form_demo(self):
         """Demonstrate the interactive form system."""
         form_system = FormSystem()
@@ -221,3 +268,131 @@ class ConsoleApp:
             print(f"\n❌ 错误: {str(e)}")
         
         return True
+
+    @MenuItemCmd("form_interactive", "Form Interactive Mode", order=7, icon="📝", long_desc="Form with immediate field processing (interactive mode)")
+    def form_interactive_demo(self):
+        """Demonstrate the form system in interactive mode with field callbacks."""
+        # Create a handler object with callback methods
+        handler = FormFieldHandler()
+        
+        # Initialize FormSystem in interactive mode
+        form_system = FormSystem(mode='interactive', handler=handler)
+        
+        # Load form from JSON file
+        form_file = os.path.join(os.path.dirname(__file__), 'form_example.json')
+        
+        if not os.path.exists(form_file):
+            print(f"\n❌ 表单文件未找到: {form_file}")
+            return True
+        
+        try:
+            form_data = form_system.load_form_from_file(form_file)
+            form_definition = form_data.get('form', {})
+            
+            # Process the form - callbacks will be triggered for each field
+            results = form_system.process_form(form_definition)
+            
+            if results is None:
+                return True
+            
+            # Display results
+            form_system.print_results(results)
+            
+        except Exception as e:
+            print(f"\n❌ 错误: {str(e)}")
+        
+        return True
+
+    @MenuItemCmd("form_submit", "Form Submit Mode", order=8, icon="📤", long_desc="Form with automatic submission (submit mode)")
+    def form_submit_demo(self):
+        """Demonstrate the form system in submit mode."""
+        # Initialize FormSystem in submit mode
+        # Set endpoint to None for local processing, or provide API endpoint for actual submission
+        form_system = FormSystem(mode='submit', endpoint=None)
+        
+        # Load form from JSON file
+        form_file = os.path.join(os.path.dirname(__file__), 'form_example.json')
+        
+        if not os.path.exists(form_file):
+            print(f"\n❌ 表单文件未找到: {form_file}")
+            return True
+        
+        try:
+            form_data = form_system.load_form_from_file(form_file)
+            form_definition = form_data.get('form', {})
+            
+            # Process the form - results will be automatically submitted at the end
+            results = form_system.process_form(form_definition)
+            
+            if results is None:
+                return True
+            
+            # Display results
+            form_system.print_results(results)
+            
+            # Save results
+            result_file = os.path.join(os.path.dirname(__file__), 'form_submit_result.json')
+            form_system.save_results(results, result_file)
+            
+        except Exception as e:
+            print(f"\n❌ 错误: {str(e)}")
+        
+        return True
+
+
+class FormFieldHandler:
+    """Handler for form field callbacks in interactive mode."""
+    
+    def on_field_name(self, value, field):
+        """Callback when 'name' field is completed."""
+        if value:
+            print(f"  📌 Processing: Name validation...")
+            if len(value) < 2:
+                print(f"  ⚠️  Warning: Name is very short")
+            else:
+                print(f"  ✓ Name '{value}' is valid")
+        else:
+            print(f"  ⚠️  Name field skipped")
+    
+    def on_field_email(self, value, field):
+        """Callback when 'email' field is completed."""
+        if value:
+            print(f"  📌 Processing: Email validation...")
+            if '@' in value:
+                print(f"  ✓ Email format looks good: {value}")
+            else:
+                print(f"  ⚠️  Warning: Email might be invalid")
+        else:
+            print(f"  ⚠️  Email field skipped")
+    
+    def on_field_country(self, value, field):
+        """Callback when 'country' field is completed."""
+        if value:
+            print(f"  📌 Processing: Country selection...")
+            print(f"  ✓ Selected region: {value}")
+        else:
+            print(f"  ⚠️  Country field skipped")
+    
+    def on_field_interests(self, value, field):
+        """Callback when 'interests' field is completed."""
+        print(f"  📌 Processing: Interest selections...")
+        if isinstance(value, list) and value:
+            print(f"  ✓ Selected {len(value)} interests")
+        else:
+            print(f"  ⚠️  No interests selected")
+    
+    def on_field_plan(self, value, field):
+        """Callback when 'plan' field is completed."""
+        if value:
+            print(f"  📌 Processing: Subscription plan...")
+            print(f"  ✓ Plan selected: {value}")
+        else:
+            print(f"  ⚠️  Plan field skipped")
+    
+    def on_field_bio(self, value, field):
+        """Callback when 'bio' field is completed."""
+        if value:
+            print(f"  📌 Processing: Bio content...")
+            print(f"  ✓ Bio length: {len(value)} characters")
+        else:
+            print(f"  ⚠️  Bio field skipped")

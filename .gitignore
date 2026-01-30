@@ -129,3 +129,6 @@ dmypy.json
 *.swo
 *~
 .DS_Store
+
+# Form submission results
+form_submit_result.json

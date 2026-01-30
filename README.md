@@ -1,10 +1,23 @@
-# ZMenu - Multi-Level Menu Console Application
+# ZMenu - Interactive Console Application Framework
 
-A flexible and reusable Python framework for building interactive console applications with nested menu support at unlimited depth levels. Features decorator-based menu item registration, cross-platform keyboard support, and automatic hierarchy management.
+A powerful and flexible Python framework for building interactive console applications with unlimited nested menu levels, decorator-based registration, and a revolutionary **dual-mode form system**.
 
-## 📋 Overview
+[![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
+[![Status](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](./CHANGELOG.md)
 
-ZMenu is a modern console application framework that simplifies the creation of complex, hierarchical menu-driven applications. It handles all the tedious work of menu navigation, input processing, and state management, allowing developers to focus on implementing their application logic.
+---
+
+## 🎯 Overview
+
+ZMenu simplifies building sophisticated console applications with:
+- **Unlimited menu nesting** - Organize complex hierarchies effortlessly
+- **Decorator-based menu items** - Clean, Pythonic syntax with `@MenuItemCmd`
+- **Interactive form system** - Two powerful modes for form processing
+- **Cross-platform support** - Windows and Unix/Linux/macOS compatibility
+- **Professional UI** - Beautiful, user-friendly console interface
+
+Perfect for CLI tools, system utilities, admin dashboards, and interactive applications.
 
 ## ✨ Features
 
@@ -23,6 +36,27 @@ ZMenu is a modern console application framework that simplifies the creation of 
 - **Error handling** - Input validation and graceful exception handling
 - **Callable actions** - Execute any Python function when a menu item is selected
 - **Automatic "Back" option** - Seamless navigation to parent menus
+
+## 📝 Form System (NEW - v2.0)
+
+**Dual-mode form system** with two powerful approaches:
+
+### Interactive Mode 🔄
+- Process each field with immediate callbacks
+- Real-time validation and data transformation
+- Perfect for complex workflows and database operations
+- Handler pattern: `on_field_<field_id>(value, field)`
+
+### Submit Mode 📤
+- Batch collection and unified submission
+- Automatic API endpoint integration
+- Perfect for REST APIs and simple submissions
+- Clean, atomic validation
+
+**See:** [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) for details
+- [FORM_MODES.md](FORM_MODES.md) - Complete API reference
+- [FORM_USAGE.md](FORM_USAGE.md) - Quick start guide
+- [test_form_modes.py](test_form_modes.py) - Working examples
 
 ## 📁 Project Structure
 

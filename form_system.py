@@ -1,9 +1,13 @@
 """
 Interactive Form System for Console
 Process form JSON and collect user input interactively.
+
+Supports two modes:
+- interactive: Process each field with immediate callback to handler
+- submit: Collect all fields and submit to endpoint as JSON
 """
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 from menu_system import Menu
 
 
@@ -23,9 +27,26 @@ class FormField:
 
 
 class FormSystem:
-    """Interactive form system for console-based input collection."""
+    """
+    Interactive form system for console-based input collection.
     
-    def __init__(self):
+    Supports two modes:
+    - 'interactive': Process each field and immediately invoke callback on handler object
+    - 'submit': Collect all fields, validate, generate JSON and submit to endpoint
+    """
+    
+    def __init__(self, mode: str = 'submit', handler: Optional[Any] = None, endpoint: Optional[str] = None):
+        """
+        Initialize FormSystem.
+        
+        Args:
+            mode: 'interactive' or 'submit' (default: 'submit')
+            handler: Handler object with callback methods (required for interactive mode)
+            endpoint: API endpoint URL (optional for submit mode, can handle JSON generation only)
+        """
+        self.mode = mode  # 'interactive' or 'submit'
+        self.handler = handler
+        self.endpoint = endpoint
         self.menu = Menu(title="Form")
         self.results = {}
     
@@ -281,7 +302,12 @@ class FormSystem:
             sys.stdout.write('\033[K')   # Clear line
     
     def process_form(self, form_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Process form and collect user input."""
+        """
+        Process form and collect user input.
+        
+        In 'interactive' mode: Calls handler callbacks after each field is collected.
+        In 'submit' mode: Collects all fields and returns formatted results (no immediate processing).
+        """
         try:
             print("\n" + "="*60)
             print(f"  {form_data.get('icon', '📝')} {form_data.get('title', '表单')}")
@@ -291,10 +317,13 @@ class FormSystem:
             
             fields = form_data.get('fields', [])
             self.results = {}
+            field_map = {}  # Store field info for later use
             
             for idx, field_data in enumerate(fields, 1):
                 field = FormField(field_data)
+                field_map[field.id] = field
                 
+                # Collect field value
                 if field.type == 'text':
                     value = self._get_text_input(field, idx, len(fields))
                     self.results[field.id] = value
@@ -306,8 +335,14 @@ class FormSystem:
                 elif field.type == 'multi_choice':
                     value = self._get_multi_choice(field, idx, len(fields))
                     self.results[field.id] = value
+                
+                # In interactive mode, invoke handler callback immediately after field collection
+                if self.mode == 'interactive':
+                    self._invoke_field_handler(field.id, self.results[field.id], field)
             
+            # Format and return results
             return self._format_results(form_data, self.results)
+            
         except KeyboardInterrupt:
             print("\n\n" + "="*60)
             print("  ⏹️  表单已取消")
@@ -334,12 +369,74 @@ class FormSystem:
                     'value': value
                 }
         
+        # In submit mode, automatically submit the results
+        if self.mode == 'submit':
+            self._submit_results(output)
+        
         return output
     
     def _get_timestamp(self) -> str:
         """Get current timestamp."""
         from datetime import datetime
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    def _invoke_field_handler(self, field_id: str, field_value: Any, field: FormField) -> None:
+        """
+        Invoke handler callback for a field (interactive mode).
+        
+        Expects handler to have a method: on_field_<field_id>(value, field)
+        For example: on_field_name(value, field) for field_id='name'
+        """
+        if not self.handler:
+            return
+        
+        # Construct callback method name
+        callback_name = f'on_field_{field_id}'
+        
+        if hasattr(self.handler, callback_name):
+            callback_method = getattr(self.handler, callback_name)
+            try:
+                callback_method(field_value, field)
+                print(f"✓ Field '{field_id}' processed successfully")
+            except Exception as e:
+                print(f"❌ Error processing field '{field_id}': {str(e)}")
+        else:
+            # Optional: Log if callback method not found
+            pass
+    
+    def _submit_results(self, results: Dict[str, Any]) -> None:
+        """
+        Submit results to endpoint (submit mode).
+        
+        If endpoint is provided, sends JSON data via POST request.
+        Otherwise, just logs the submission.
+        """
+        if not self.endpoint:
+            print(f"\n✓ Form data prepared for submission (no endpoint configured)")
+            return
+        
+        try:
+            import requests
+            
+            print(f"\n📤 Submitting form data to {self.endpoint}...")
+            
+            response = requests.post(
+                self.endpoint,
+                json=results,
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            if response.status_code in [200, 201, 202]:
+                print(f"✓ Form submitted successfully")
+                if response.text:
+                    print(f"Response: {response.text}")
+            else:
+                print(f"❌ Submission failed with status {response.status_code}")
+                print(f"Response: {response.text}")
+        except ImportError:
+            print(f"⚠️  requests library not available. Set up HTTP client to submit.")
+        except Exception as e:
+            print(f"❌ Error submitting form: {str(e)}")
     
     def save_results(self, results: Dict[str, Any], file_path: str) -> None:
         """Save results to JSON file."""
@@ -348,25 +445,46 @@ class FormSystem:
         print(f"\n✓ 结果已保存到: {file_path}")
     
     def print_results(self, results: Dict[str, Any]) -> None:
-        """Print results in formatted way."""
-        print("\n" + "="*60)
-        print("  表单提交结果")
-        print("="*60)
-        print(f"\n表单: {results.get('form_title', '')}")
-        print(f"时间: {results.get('timestamp', '')}\n")
+        """Print results in OpenClaw-style formatted way."""
+        width = 82
+        border_h = "─" * (width - 2)
         
+        def pad_line(text, indent=2):
+            """Pad text to fit within the border."""
+            padding = width - len(text) - indent - 1
+            return text + (" " * max(0, padding))
+        
+        # Header
+        print(f"\n┌{border_h}╮")
+        print(f"│{pad_line(' ✓ Form Submission Results', 1)}│")
+        print(f"├{border_h}┤")
+        
+        # Form info
+        form_title = results.get('form_title', '')
+        timestamp = results.get('timestamp', '')
+        print(f"│{pad_line(f'  📋 {form_title}', 1)}│")
+        print(f"│{pad_line(f'  🕐 {timestamp}', 1)}│")
+        print(f"├{border_h}┤")
+        
+        # Data section header
+        print(f"│{pad_line('  Field Values', 1)}│")
+        print(f"├{border_h}┤")
+        
+        # Data entries
         for field_id, field_data in results.get('data', {}).items():
             label = field_data.get('label', '')
             value = field_data.get('value', '')
             
             if isinstance(value, list):
-                print(f"{label}:")
+                print(f"│{pad_line(f'  {label}', 1)}│")
                 if value:
                     for item in value:
-                        print(f"  • {item}")
+                        print(f"│{pad_line(f'    ✓ {item}', 1)}│")
                 else:
-                    print(f"  (未选择)")
+                    print(f"│{pad_line('    (no selection)', 1)}│")
             else:
-                print(f"{label}: {value if value else '(未填写)'}")
+                display_value = value if value else "(empty)"
+                print(f"│{pad_line(f'  {label}: {display_value}', 1)}│")
         
-        print("\n" + "="*60)
+        # Footer
+        print(f"└{border_h}╯\n")
