@@ -69,20 +69,23 @@ class FormSystem:
         if not field.required:
             print(f"    (可选，按 ENTER 跳过)")
         
-        while True:
-            user_input = input("➤ ").strip()
-            
-            # 如果是可选字段且用户按ENTER，跳过
-            if not user_input and not field.required:
-                return None
-            
-            # 验证输入
-            is_valid, error_msg = self._validate_text(user_input, field)
-            if not is_valid:
-                print(f"❌ {error_msg}")
-                continue
-            
-            return user_input if user_input else None
+        try:
+            while True:
+                user_input = input("➤ ").strip()
+                
+                # 如果是可选字段且用户按ENTER，跳过
+                if not user_input and not field.required:
+                    return None
+                
+                # 验证输入
+                is_valid, error_msg = self._validate_text(user_input, field)
+                if not is_valid:
+                    print(f"❌ {error_msg}")
+                    continue
+                
+                return user_input if user_input else None
+        except KeyboardInterrupt:
+            raise
     
     def _get_single_choice(self, field: FormField, field_num: int, total_fields: int) -> Optional[str]:
         """Get single choice selection from user."""
@@ -97,34 +100,45 @@ class FormSystem:
         
         selected_idx = 0
         
-        while True:
-            # 显示选项
-            print()
-            for i, option in enumerate(field.options):
-                if i == selected_idx:
-                    # 高亮选中的选项
-                    print(f"  ● {option['label']}")
-                else:
-                    print(f"    {option['label']}")
-            
-            # 获取用户输入
-            key = self._get_key()
-            
-            if key == 'up':
-                selected_idx = (selected_idx - 1) % len(field.options)
-                # 清除之前的输出，重新显示
-                self._clear_lines(len(field.options) + 1)
-            elif key == 'down':
-                selected_idx = (selected_idx + 1) % len(field.options)
-                # 清除之前的输出，重新显示
-                self._clear_lines(len(field.options) + 1)
-            elif key == 'enter':
-                selected_value = field.options[selected_idx]['value']
-                print(f"✓ 已选择: {field.options[selected_idx]['label']}")
-                return selected_value
-            elif key == 'esc':
-                print("⊘ 已取消")
-                return None
+        try:
+            while True:
+                # 显示选项
+                print()
+                for i, option in enumerate(field.options):
+                    if i == selected_idx:
+                        # 高亮选中的选项
+                        print(f"  ● {option['label']}")
+                    else:
+                        print(f"    {option['label']}")
+                
+                # 获取用户输入
+                key = self._get_key()
+                
+                if key == 'up':
+                    selected_idx = (selected_idx - 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 1)
+                elif key == 'down':
+                    selected_idx = (selected_idx + 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 1)
+                elif key == 'left' or key == 'right':
+                    # Treat left/right like up/down for single select
+                    if key == 'left':
+                        selected_idx = (selected_idx - 1) % len(field.options)
+                    else:  # key == 'right'
+                        selected_idx = (selected_idx + 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 1)
+                elif key == 'enter':
+                    selected_value = field.options[selected_idx]['value']
+                    print(f"✓ 已选择: {field.options[selected_idx]['label']}")
+                    return selected_value
+                elif key == 'esc':
+                    print("⊘ 已取消")
+                    return None
+        except KeyboardInterrupt:
+            raise
     
     def _get_multi_choice(self, field: FormField, field_num: int, total_fields: int) -> Optional[List[str]]:
         """Get multiple choice selections from user."""
@@ -140,53 +154,64 @@ class FormSystem:
         selected_indices = set()
         current_idx = 0
         
-        while True:
-            # 显示选项
-            print()
-            for i, option in enumerate(field.options):
-                checkbox = "☑️" if i in selected_indices else "☐"
-                if i == current_idx:
-                    # 高亮当前选项
-                    print(f"  ► {checkbox} {option['label']}")
-                else:
-                    print(f"    {checkbox} {option['label']}")
-            
-            # 显示已选择数量
-            selected_count = len(selected_indices)
-            print(f"\n  已选择: {selected_count} 项")
-            
-            # 获取用户输入
-            key = self._get_key()
-            
-            if key == 'up':
-                current_idx = (current_idx - 1) % len(field.options)
-                # 清除之前的输出，重新显示
-                self._clear_lines(len(field.options) + 3)
-            elif key == 'down':
-                current_idx = (current_idx + 1) % len(field.options)
-                # 清除之前的输出，重新显示
-                self._clear_lines(len(field.options) + 3)
-            elif key == 'space':
-                # 切换选择
-                if current_idx in selected_indices:
-                    selected_indices.remove(current_idx)
-                else:
-                    selected_indices.add(current_idx)
-                # 清除之前的输出，重新显示
-                self._clear_lines(len(field.options) + 3)
-            elif key == 'enter':
-                selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
-                selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
-                if selected_values:
-                    print(f"\n✓ 已选择 {len(selected_values)} 项:")
-                    for label in selected_labels:
-                        print(f"    • {label}")
-                else:
-                    print(f"\n✓ 未选择任何项")
-                return selected_values if selected_values else []
-            elif key == 'esc':
-                print("⊘ 已取消")
-                return None
+        try:
+            while True:
+                # 显示选项
+                print()
+                for i, option in enumerate(field.options):
+                    checkbox = "☑️" if i in selected_indices else "☐"
+                    if i == current_idx:
+                        # 高亮当前选项
+                        print(f"  ► {checkbox} {option['label']}")
+                    else:
+                        print(f"    {checkbox} {option['label']}")
+                
+                # 显示已选择数量
+                selected_count = len(selected_indices)
+                print(f"\n  已选择: {selected_count} 项")
+                
+                # 获取用户输入
+                key = self._get_key()
+                
+                if key == 'up':
+                    current_idx = (current_idx - 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 3)
+                elif key == 'down':
+                    current_idx = (current_idx + 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 3)
+                elif key == 'left' or key == 'right':
+                    # Treat left/right like up/down for multi-select navigation
+                    if key == 'left':
+                        current_idx = (current_idx - 1) % len(field.options)
+                    else:  # key == 'right'
+                        current_idx = (current_idx + 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 3)
+                elif key == 'space':
+                    # 切换选择
+                    if current_idx in selected_indices:
+                        selected_indices.remove(current_idx)
+                    else:
+                        selected_indices.add(current_idx)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 3)
+                elif key == 'enter':
+                    selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
+                    selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
+                    if selected_values:
+                        print(f"\n✓ 已选择 {len(selected_values)} 项:")
+                        for label in selected_labels:
+                            print(f"    • {label}")
+                    else:
+                        print(f"\n✓ 未选择任何项")
+                    return selected_values if selected_values else []
+                elif key == 'esc':
+                    print("⊘ 已取消")
+                    return None
+        except KeyboardInterrupt:
+            raise
     
     def _get_key(self) -> str:
         """Get key input from user (Windows/Unix compatible)."""
@@ -196,7 +221,9 @@ class FormSystem:
             import msvcrt
             key = msvcrt.getch()
             
-            if key == b'\x00' or key == b'\xe0':  # Special keys
+            if key == b'\x03':  # Ctrl+C
+                raise KeyboardInterrupt()
+            elif key == b'\x00' or key == b'\xe0':  # Special keys
                 key = msvcrt.getch()
                 if key == b'H':  # Up arrow
                     return 'up'
@@ -224,7 +251,9 @@ class FormSystem:
                 tty.setraw(fd)
                 key = sys.stdin.read(1)
                 
-                if key == '\x1b':  # Escape sequence
+                if key == '\x03':  # Ctrl+C
+                    raise KeyboardInterrupt()
+                elif key == '\x1b':  # Escape sequence
                     next_chars = sys.stdin.read(2)
                     if next_chars == '[A':
                         return 'up'
@@ -253,31 +282,37 @@ class FormSystem:
     
     def process_form(self, form_data: Dict[str, Any]) -> Dict[str, Any]:
         """Process form and collect user input."""
-        print("\n" + "="*60)
-        print(f"  {form_data.get('icon', '📝')} {form_data.get('title', '表单')}")
-        print("="*60)
-        if form_data.get('description'):
-            print(f"\n{form_data['description']}\n")
-        
-        fields = form_data.get('fields', [])
-        self.results = {}
-        
-        for idx, field_data in enumerate(fields, 1):
-            field = FormField(field_data)
+        try:
+            print("\n" + "="*60)
+            print(f"  {form_data.get('icon', '📝')} {form_data.get('title', '表单')}")
+            print("="*60)
+            if form_data.get('description'):
+                print(f"\n{form_data['description']}\n")
             
-            if field.type == 'text':
-                value = self._get_text_input(field, idx, len(fields))
-                self.results[field.id] = value
+            fields = form_data.get('fields', [])
+            self.results = {}
             
-            elif field.type == 'single_choice':
-                value = self._get_single_choice(field, idx, len(fields))
-                self.results[field.id] = value
+            for idx, field_data in enumerate(fields, 1):
+                field = FormField(field_data)
+                
+                if field.type == 'text':
+                    value = self._get_text_input(field, idx, len(fields))
+                    self.results[field.id] = value
+                
+                elif field.type == 'single_choice':
+                    value = self._get_single_choice(field, idx, len(fields))
+                    self.results[field.id] = value
+                
+                elif field.type == 'multi_choice':
+                    value = self._get_multi_choice(field, idx, len(fields))
+                    self.results[field.id] = value
             
-            elif field.type == 'multi_choice':
-                value = self._get_multi_choice(field, idx, len(fields))
-                self.results[field.id] = value
-        
-        return self._format_results(form_data, self.results)
+            return self._format_results(form_data, self.results)
+        except KeyboardInterrupt:
+            print("\n\n" + "="*60)
+            print("  ⏹️  表单已取消")
+            print("="*60 + "\n")
+            return None
     
     def _format_results(self, form_data: Dict[str, Any], results: Dict[str, Any]) -> Dict[str, Any]:
         """Format collected results with field information."""

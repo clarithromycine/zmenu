@@ -50,10 +50,7 @@ class ConsoleApp:
     # Maps group path to icon and display name
     MENU_GROUP_ICONS = {
         "Tools":            ("🛠️", "Tools"),
-        "Settings":         ("⚙️", "Settings"),
-        "Settings.Display": ("📺", "Display Options"),
-        "Settings.Language":("🌐", "Language"),
-        "Help":             ("📖", "Help")
+        "nLevel":         ("📁", "N-Level Menu Demo")
     }
 
     # Menu item action methods
@@ -63,15 +60,7 @@ class ConsoleApp:
         print("\n👋 Hello from the console app!")
         return True
 
-    @MenuItemCmd("user", "Greet User", order=1, icon="👤", long_desc="Ask for user name and display personalized greeting")
-    def user_greeting(self):
-        """Get user input and display greeting."""
-        name = input("\nEnter your name: ").strip()
-        if name:
-            print(f"\n👋 Hello, {name}! Nice to meet you.")
-        return True
-
-    @MenuItemCmd("calc", "Calculator", order=0, group="Tools", icon="🧮", long_desc="Perform basic arithmetic operations")
+    @MenuItemCmd("calc", "Calculator", order=5, group="Tools", icon="🧮", long_desc="Perform basic arithmetic operations")
     def show_calculator(self):
         """Simple calculator demonstration."""
         try:
@@ -87,10 +76,12 @@ class ConsoleApp:
                 print(f"  Division by zero not allowed")
         except ValueError:
             print("\n❌ Invalid number input")
+        except KeyboardInterrupt:
+            print("\n\n⏹️  Operation cancelled by user")
         
         return True
 
-    @MenuItemCmd("sysinfo", "System Information", order=1, group="Tools", icon="ℹ️", long_desc="Display system and environment details")
+    @MenuItemCmd("sysinfo", "System Information", order=5, group="Tools", icon="ℹ️", long_desc="Display system and environment details")
     def show_system_info(self):
         """Display system information."""
         print(f"\nOperating System: {sys.platform}")
@@ -98,23 +89,7 @@ class ConsoleApp:
         print(f"Current Directory: {os.getcwd()}")
         return True
 
-    @MenuItemCmd("about", "About", order=0, group="Help", icon="📖", long_desc="Learn about this application")
-    def show_about(self):
-        """Show about information."""
-        print("\n" + "=" * 60)
-        print("  Multi-Level Menu Console Application")
-        print("=" * 60)
-        print("\nThis application demonstrates a flexible menu system")
-        print("that supports multiple levels of nested menus.")
-        print("\nFeatures:")
-        print("  • Nested menu support")
-        print("  • Easy to extend with new options")
-        print("  • Clean, user-friendly interface")
-        print("  • Error handling and input validation")
-        print("=" * 60)
-        return True
-
-    @MenuItemCmd("theme", "Change Theme", group="Settings.Display", icon="🎨", long_desc="Customize the visual appearance")
+    @MenuItemCmd("theme", "Change Theme", group="nLevel.Display", icon="🎨", long_desc="Customize the visual appearance")
     def show_theme_options(self):
         """Display theme options."""
         print("\n" + "=" * 60)
@@ -127,7 +102,7 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("font", "Change Font Size", group="Settings.Display", icon="🔠", long_desc="Adjust text size for better readability")
+    @MenuItemCmd("font", "Change Font Size", group="nLevel.Display", icon="🔠", long_desc="Adjust text size for better readability")
     def show_font_options(self):
         """Display font size options."""
         print("\n" + "=" * 60)
@@ -140,68 +115,32 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("en", "English", group="Settings.Language", long_desc="Set interface language to English")
+    @MenuItemCmd("en", "English", group="nLevel.Language", long_desc="Set interface language to English")
     def set_language_en(self):
         """Set language to English."""
         print(f"\n✅ Language changed to: English")
         return True
 
-    @MenuItemCmd("es", "Español", group="Settings.Language", long_desc="Cambiar idioma de interfaz al español")
+    @MenuItemCmd("es", "Español", group="nLevel.Language", long_desc="Cambiar idioma de interfaz al español")
     def set_language_es(self):
         """Set language to Español."""
         print(f"\n✅ Language changed to: Español")
         return True
 
-    @MenuItemCmd("fr", "Français", group="Settings.Language", long_desc="Définir la langue de l'interface au français")
+    @MenuItemCmd("fr", "Français", group="nLevel.Language", long_desc="Définir la langue de l'interface au français")
     def set_language_fr(self):
         """Set language to Français."""
         print(f"\n✅ Language changed to: Français")
         return True
 
-    @MenuItemCmd("status", "System Status", order=1, icon="📊", long_desc="Check the current operational status of the application")
-    def show_status(self):
-        """Display application status."""
-        print("\n" + "=" * 60)
-        print("  SYSTEM STATUS")
-        print("=" * 60)
-        print("\n  ✓ Application running normally")
-        print("  ✓ All systems operational")
-        print("  ✓ Ready for commands")
-        return True
 
-    @MenuItemCmd("time", "Show Time", order=2, icon="🕐", long_desc="Display the current date and time")
+    @MenuItemCmd("time", "Show Time", group="Tools",order=5, icon="🕐", long_desc="Display the current date and time")
     def show_time(self):
         """Display current time."""
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"\n  Current time: {current_time}")
         return True
 
-    @MenuItemCmd("usage", "How to Use", group="Help", icon="❓", long_desc="Learn how to navigate and use this application")
-    def show_usage(self):
-        """Show usage instructions."""
-        print("\n" + "=" * 60)
-        print("  HOW TO USE")
-        print("=" * 60 + "\n")
-        print("1. Navigate using menu numbers or arrow keys")
-        print("2. Press ESC to exit the current menu or application")
-        print("3. Follow on-screen prompts for actions")
-        print("\nExample Navigation:")
-        print("  Main Menu → Tools → Calculator")
-        print("           → Settings → Display → Theme")
-        print("           → Help → About")
-        return True
-
-    @MenuItemCmd("keyboard", "Keyboard Shortcuts", group="Help", icon="⌨️", long_desc="View available keyboard shortcuts and navigation keys")
-    def show_shortcuts(self):
-        """Show keyboard shortcuts."""
-        print("\n" + "=" * 60)
-        print("  KEYBOARD SHORTCUTS")
-        print("=" * 60)
-        print("\n  0 - Exit current menu or application")
-        print("  1-9 - Navigate to menu option (depends on menu size)")
-        print("  ESC - Go back to parent menu (or exit at root menu)")
-        print("\n  Note: Shortcuts are number-based for menu navigation")
-        return True
     @MenuItemCmd("confirm", "Confirm Demo", order=3, icon="✅", long_desc="Test the yes/no selection with arrow keys")
     def confirm_demo(self):
         """Demonstrate the yes/no prompt with left/right arrow keys."""
@@ -222,24 +161,27 @@ class ConsoleApp:
     @MenuItemCmd("multi", "Multi-Select Demo", order=4, icon="☑️", long_desc="Test multi-select with checkboxes")
     def multi_select_demo(self):
         """Demonstrate the multi-select prompt."""
-        items = [            
-            {"label": "🌐 Enable Dark Mode", "description": "Use dark theme across the application", "selected": False},
-            {"label": "🔔 Enable Notifications", "description": "Show system notifications", "selected": True},
-            {"label": "📊 Analytics", "description": "Send usage analytics", "selected": False},
-            {"label": "🔒 Enable Two-Factor Auth", "description": "Require 2FA for login", "selected": True},
-            {"label": "🌍 Auto-Update", "description": "Automatically check for updates", "selected": False},
-            {"label": "💾 Auto-Save", "description": "Automatically save your work", "selected": True},
-            {"label": "🔊 Sound Effects", "description": "Enable UI sound effects", "selected": False},
-        ]
-        
-        selected = self.main_menu.multi_select_prompt("Select packages to install", items)
-        
-        if selected is None:
-            print("\n⊘ Selection cancelled")
-        else:
-            print("\n✓ Selected items:")
-            for item in selected:
-                print(f"  • {item['label']}")
+        try:
+            items = [            
+                {"label": "🌐 Enable Dark Mode", "description": "Use dark theme across the application", "selected": False},
+                {"label": "🔔 Enable Notifications", "description": "Show system notifications", "selected": True},
+                {"label": "📊 Analytics", "description": "Send usage analytics", "selected": False},
+                {"label": "🔒 Enable Two-Factor Auth", "description": "Require 2FA for login", "selected": True},
+                {"label": "🌍 Auto-Update", "description": "Automatically check for updates", "selected": False},
+                {"label": "💾 Auto-Save", "description": "Automatically save your work", "selected": True},
+                {"label": "🔊 Sound Effects", "description": "Enable UI sound effects", "selected": False},
+            ]
+            
+            selected = self.main_menu.multi_select_prompt("Select packages to install", items)
+            
+            if selected is None:
+                print("\n⊘ Selection cancelled")
+            else:
+                print("\n✓ Selected items:")
+                for item in selected:
+                    print(f"  • {item['label']}")
+        except KeyboardInterrupt:
+            print("\n\n⏹️  Operation cancelled by user")
         
         return True
 
@@ -261,6 +203,10 @@ class ConsoleApp:
             
             # Process the form
             results = form_system.process_form(form_definition)
+            
+            # Check if form was cancelled (results is None)
+            if results is None:
+                return True
             
             # Display results
             form_system.print_results(results)

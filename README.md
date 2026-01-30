@@ -82,20 +82,21 @@ python main.py
 ```
 Root Menu (main)
 ├── 👋 Say Hello (immediate action)
-├── 👤 Greet User (immediate action)
+├── ✅ Confirm Demo (interactive yes/no selection)
+├── ☑️ Multi-Select Demo (interactive multi-select with checkboxes)
 ├── 🧮 Tools (submenu - group="Tools")
-│   ├── 🧮 Calculator
-│   └── ℹ️ System Information
-├── 📺 Settings (submenu - group="Settings")
-│   ├── Display Options (submenu - group="Settings.Display")
-│   ├── Language (submenu - group="Settings.Language")
-│   │   ├── English
-│   │   ├── Español
-│   │   └── Français
-├── 📖 Help (submenu - group="Help")
-│   ├── About
-│   └── How to Use
-└── 🕐 Show Time (immediate action)
+│   ├── 🧮 Calculator (with arithmetic operations)
+│   ├── ℹ️ System Information (display system details)
+│   └── 🕐 Show Time (display current date and time)
+├── 📁 nLevel Menu (submenu - group="Settings")
+│   ├── 📺 Display Options (submenu - group="Settings.Display")
+│   │   ├── 🎨 Change Theme
+│   │   └── 🔠 Change Font Size
+│   └── 🌐 Language (submenu - group="Settings.Language")
+│       ├── English
+│       ├── Español
+│       └── Français
+└── 📋 Form Demo (interactive form with multiple field types)
 ```
 
 ## 📖 API Reference
