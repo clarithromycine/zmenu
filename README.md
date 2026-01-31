@@ -159,7 +159,9 @@ Root Menu (main)
 │       ├── English
 │       ├── Español
 │       └── Français
-└── 📋 Form Demo (interactive form with multiple field types)
+├── 📝 Form Interactive Mode (form system in interactive mode)
+├── 📤 Form Submit Mode (form system in submit mode)
+└── 🔄 Form with Pre-Validation (form system with pre-validation)
 ```
 
 ## 📖 API Reference
@@ -243,43 +245,128 @@ menu.register(*decorated_functions)
 app.run()
 ```
 
-### `FormSystem` - Enhanced Form System with Pre-Validation
+### `FormSystem` - Form System with Three Modes
 
-Initialize form system with pre-validation support:
+Initialize form system with flexible mode support:
 
 ```python
+# Interactive mode - Process each field with callbacks
 form_system = FormSystem(
-    mode='interactive',                    # 'interactive' or 'submit'
-    handler=field_handler,                 # Handler for post-input callbacks
-    pre_validation_handler=pre_validator,  # Handler for pre-validation (optional)
-    endpoint=None                          # API endpoint for submit mode
+    mode='interactive',
+    handler=field_handler,                 # Handler with on_field_* methods
+    pre_validation_handler=pre_validator   # Optional pre-validation
 )
+
+# Submit mode - Batch collection and submission
+form_system = FormSystem(
+    mode='submit',
+    endpoint='https://api.example.com/submit'  # Optional API endpoint
+)
+```
+
+### Interactive Mode Handler Pattern
+
+Create a handler with field callback methods:
+
+```python
+class FormFieldHandler:
+    def on_field_{field_id}(self, value, field):
+        """
+        Process field after user input.
+        
+        Args:
+            value: User-entered value
+            field: The FormField object with metadata
+        """
+        # Process, validate, or transform the value
+        print(f"Processing {field.label}: {value}")
 ```
 
 ### Pre-Validation Handler Pattern
 
-Create a handler class with pre-validation methods:
+Create a handler to suggest existing values:
 
 ```python
 class FormPreValidationHandler:
     def pre_validate_{field_id}(self, field, current_results):
         """
-        Pre-validate a field before user input.
+        Suggest value before user input.
         
         Args:
-            field: The FormField object containing field metadata
-            current_results: Dictionary of results collected so far in the form
+            field: The FormField object with metadata
+            current_results: Results collected so far
             
         Returns:
-            Pre-validated value if available, None otherwise
+            Pre-validated value or None
         """
-        # Check for existing value in your data store
-        if some_condition:
+        # Check database, cache, or previous values
+        if existing_value_available:
             return existing_value
         return None
 ```
 
-## 💻 Creating Your Own Application
+## � Form Examples
+
+### Example 1: Interactive Mode with Callbacks
+
+```python
+from form_system import FormSystem
+
+# Create handler with field callbacks
+class MyFormHandler:
+    def on_field_name(self, value, field):
+        print(f"✓ Name processed: {value}")
+    
+    def on_field_email(self, value, field):
+        print(f"✓ Email validated: {value}")
+
+# Initialize and process
+form = FormSystem(mode='interactive', handler=MyFormHandler())
+results = form.process_form(form_definition)
+```
+
+### Example 2: Submit Mode with API Endpoint
+
+```python
+# Batch collection with automatic submission
+form = FormSystem(
+    mode='submit',
+    endpoint='https://api.example.com/submit'
+)
+results = form.process_form(form_definition)
+# Results automatically submitted to endpoint
+```
+
+### Example 3: Pre-Validation with Existing Data
+
+```python
+# Suggest existing values to users
+class PreValidator:
+    def pre_validate_email(self, field, current_results):
+        # Return existing email if available
+        return "user@example.com"
+
+form = FormSystem(
+    mode='interactive',
+    handler=MyFormHandler(),
+    pre_validation_handler=PreValidator()
+)
+results = form.process_form(form_definition)
+```
+
+## 📋 Form Menu Items in Demo
+
+The example application includes three form demos:
+
+| Menu Item | Mode | Features |
+|-----------|------|----------|
+| **Form Interactive Mode** | Interactive | Immediate field callbacks, real-time processing |
+| **Form Submit Mode** | Submit | Batch collection, automatic file save |
+| **Form with Pre-Validation** | Interactive + Pre-validation | Suggest existing values, user confirmation |
+
+All form examples use the same `form_example.json` file but demonstrate different processing strategies.
+
+
 
 ### Step 1: Define Actions with Decorators
 
