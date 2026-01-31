@@ -271,7 +271,7 @@ class FormSystem:
         lines_printed = 2  # Start with the blank line and field header line: "\n[1/6] Field Name"
         if field.description:
             lines_printed += 1
-        lines_printed += 1  # Instruction line: "(使用 ↑↓ 箭头键选择，ENTER 确认)"
+        #lines_printed += 1  # Instruction line: "(使用 ↑↓ 箭头键选择，ENTER 确认)"
         lines_printed += len(field.options)  # All the options
         lines_printed += 1  # Blank line before options
         
