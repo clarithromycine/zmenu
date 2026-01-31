@@ -240,6 +240,7 @@ class FormSystem:
                 elif key == 'esc':
                     print("⊘ 已取消")
                     return None
+                # 忽略其他按键（包括 'unknown'）
         except KeyboardInterrupt:
             raise
     
@@ -327,6 +328,7 @@ class FormSystem:
                     for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')
                     return None
+                # 忽略其他按键（包括 'unknown'）
         except KeyboardInterrupt:
             raise
     
@@ -415,6 +417,7 @@ class FormSystem:
                 elif key == 'esc':
                     print("⊘ 已取消")
                     return None
+                # 忽略其他按键（包括 'unknown'）
         except KeyboardInterrupt:
             raise
     
@@ -524,6 +527,7 @@ class FormSystem:
                     for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')
                     return None
+                # 忽略其他按键（包括 'unknown'）
         except KeyboardInterrupt:
             raise
     
