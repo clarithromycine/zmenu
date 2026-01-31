@@ -65,9 +65,11 @@ Perfect for CLI tools, system utilities, admin dashboards, and interactive appli
 
 ```
 zmenu/
-├── menu_system.py          # Core framework - Menu, MenuItem, MenuItemCmd, ConsoleApp classes
-├── console_app.py          # Application logic - Menu item definitions and group configuration
+├── menu_system.py          # Core framework - Menu, MenuItem, MenuItemCmd classes
+├── form_system.py          # Form system - Interactive, Submit, and Pre-validation modes
+├── console_app.py          # Application logic - Menu item definitions and form handlers
 ├── main.py                 # Entry point - Application initialization and setup
+├── form_example.json       # Sample form definition for demos
 └── README.md               # This file
 ```
 
