@@ -131,7 +131,7 @@ class FormSystem:
                 return pre_validated_value
         
         # Track the number of lines printed for this field
-        lines_printed = 1  # Start with the field header line: "[1/6] Field Name"
+        lines_printed = 2  # Start with the blank line and field header line: "\n[1/6] Field Name"
         
         # Show full field information
         print(f"\n[{field_num}/{total_fields}] {field.label}")
@@ -268,7 +268,7 @@ class FormSystem:
         selected_idx = 0
         
         # Track the number of lines printed for this field
-        lines_printed = 1  # Start with the field header line: "[1/6] Field Name"
+        lines_printed = 2  # Start with the blank line and field header line: "\n[1/6] Field Name"
         if field.description:
             lines_printed += 1
         lines_printed += 1  # Instruction line: "(使用 ↑↓ 箭头键选择，ENTER 确认)"
@@ -444,7 +444,7 @@ class FormSystem:
         current_idx = 0
         
         # Track the number of lines printed for this field
-        lines_printed = 1  # Start with the field header line: "[1/6] Field Name"
+        lines_printed = 2  # Start with the blank line and field header line: "\n[1/6] Field Name"
         if field.description:
             lines_printed += 1
         lines_printed += 1  # Instruction line: "(使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)"
