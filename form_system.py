@@ -130,24 +130,31 @@ class FormSystem:
                 print(f"[{field_num}/{total_fields}] {field.label}: {pre_validated_value}")
                 return pre_validated_value
         
+        # Track the number of lines printed for this field
+        lines_printed = 1  # Start with the field header line: "[1/6] Field Name"
+        
+        # Show full field information
+        print(f"\n[{field_num}/{total_fields}] {field.label}")
+        if field.description:
+            print(f"    {field.description}")
+            lines_printed += 1
+        if field.placeholder:
+            print(f"    (例如: {field.placeholder})")
+            lines_printed += 1
+        if not field.required:
+            print(f"    (可选，按 ENTER 跳过)")
+            lines_printed += 1
+        
         try:
-            # Show full field information
-            print(f"\n[{field_num}/{total_fields}] {field.label}")
-            if field.description:
-                print(f"    {field.description}")
-            if field.placeholder:
-                print(f"    (例如: {field.placeholder})")
-            if not field.required:
-                print(f"    (可选，按 ENTER 跳过)")
-            
             while True:
                 user_input = input("➤ ").strip()
                 
                 # 如果是可选字段且用户按ENTER，跳过
                 if not user_input and not field.required:
-                    # Clear the input line and show the result
+                    # Clear all lines for this field and show the result
                     import sys
-                    sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
+                    for _ in range(lines_printed):
+                        sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                     print(f"[{field_num}/{total_fields}] {field.label}: (skipped)")
                     return None
                 
@@ -155,11 +162,13 @@ class FormSystem:
                 is_valid, error_msg = self._validate_text(user_input, field)
                 if not is_valid:
                     print(f"❌ {error_msg}")
+                    lines_printed += 1  # Account for error message
                     continue
                 
-                # Clear the input line and show the result
+                # Clear all lines for this field and show the result
                 import sys
-                sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
+                for _ in range(lines_printed):
+                    sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                 result = user_input if user_input else None
                 print(f"[{field_num}/{total_fields}] {field.label}: {result}")
                 return result
@@ -258,6 +267,14 @@ class FormSystem:
         
         selected_idx = 0
         
+        # Track the number of lines printed for this field
+        lines_printed = 1  # Start with the field header line: "[1/6] Field Name"
+        if field.description:
+            lines_printed += 1
+        lines_printed += 1  # Instruction line: "(使用 ↑↓ 箭头键选择，ENTER 确认)"
+        lines_printed += len(field.options)  # All the options
+        lines_printed += 1  # Blank line before options
+        
         try:
             # Show full field information
             print(f"\n[{field_num}/{total_fields}] {field.label}")
@@ -297,15 +314,18 @@ class FormSystem:
                 elif key == 'enter':
                     selected_value = field.options[selected_idx]['value']
                     selected_label = field.options[selected_idx]['label']
-                    # Clear the selection interface and show the result
+                    # Clear all lines for this field and show the result
                     import sys
-                    # Clear the options display (including the blank line and selection)
-                    for _ in range(len(field.options) + 2):  # +2 for blank line and confirmation
+                    for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')
                     print(f"[{field_num}/{total_fields}] {field.label}: {selected_label}")
                     return selected_value
                 elif key == 'esc':
                     print("⊘ 已取消")
+                    # Clear all lines for this field
+                    import sys
+                    for _ in range(lines_printed):
+                        sys.stdout.write('\033[1A\033[2K')
                     return None
         except KeyboardInterrupt:
             raise
@@ -423,6 +443,14 @@ class FormSystem:
         selected_indices = set()
         current_idx = 0
         
+        # Track the number of lines printed for this field
+        lines_printed = 1  # Start with the field header line: "[1/6] Field Name"
+        if field.description:
+            lines_printed += 1
+        lines_printed += 1  # Instruction line: "(使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)"
+        lines_printed += len(field.options)  # All the options
+        lines_printed += 2  # Blank line before options and selection count line
+        
         try:
             # Show full field information
             print(f"\n[{field_num}/{total_fields}] {field.label}")
@@ -476,10 +504,9 @@ class FormSystem:
                     selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                     selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
                     
-                    # Clear the selection interface and show the result
+                    # Clear all lines for this field and show the result
                     import sys
-                    # Clear the options display (including the blank line, checkboxes, and selection count)
-                    for _ in range(len(field.options) + 3):  # +3 for blank line, checkboxes, and selection count
+                    for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')
                     
                     # Print the completed field in the desired format
@@ -492,6 +519,10 @@ class FormSystem:
                     return selected_values if selected_values else []
                 elif key == 'esc':
                     print("⊘ 已取消")
+                    # Clear all lines for this field
+                    import sys
+                    for _ in range(lines_printed):
+                        sys.stdout.write('\033[1A\033[2K')
                     return None
         except KeyboardInterrupt:
             raise
