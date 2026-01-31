@@ -240,8 +240,8 @@ class FormSystem:
                 elif key == 'esc':
                     print("⊘ 已取消")
                     return None
-                # 在单选中，空格键和其他按键一样被忽略
-                # 忽略其他按键（包括 'unknown' 和 'space'）
+                # 对于无效按键（包括 'space'、'unknown' 等），不执行任何操作，直接继续循环
+                # 这样就不会导致界面刷新
         except KeyboardInterrupt:
             raise
     
@@ -329,8 +329,8 @@ class FormSystem:
                     for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')
                     return None
-                # 在单选中，空格键和其他按键一样被忽略
-                # 忽略其他按键（包括 'unknown' 和 'space'）
+                # 对于无效按键（包括 'space'、'unknown' 等），不执行任何操作，直接继续循环
+                # 这样就不会导致界面刷新
         except KeyboardInterrupt:
             raise
     
@@ -419,7 +419,8 @@ class FormSystem:
                 elif key == 'esc':
                     print("⊘ 已取消")
                     return None
-                # 忽略其他按键（包括 'unknown'）
+                # 对于无效按键（包括 'unknown' 等），不执行任何操作，直接继续循环
+                # 这样就不会导致界面刷新
         except KeyboardInterrupt:
             raise
     
@@ -529,7 +530,8 @@ class FormSystem:
                     for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')
                     return None
-                # 忽略其他按键（包括 'unknown'）
+                # 对于无效按键（包括 'unknown' 等），不执行任何操作，直接继续循环
+                # 这样就不会导致界面刷新
         except KeyboardInterrupt:
             raise
     
