@@ -204,15 +204,20 @@ class FormSystem:
         selected_idx = 0
         
         try:
+            show_options = True  # 标记是否需要显示选项
             while True:
-                # 显示选项
-                print()
-                for i, option in enumerate(field.options):
-                    if i == selected_idx:
-                        # 高亮选中的选项
-                        print(f"  ● {option['label']}")
-                    else:
-                        print(f"    {option['label']}")
+                # 根据标记决定是否显示选项
+                if show_options:
+                    print()
+                    for i, option in enumerate(field.options):
+                        if i == selected_idx:
+                            # 高亮选中的选项
+                            print(f"  ● {option['label']}")
+                        else:
+                            print(f"    {option['label']}")
+                
+                # 重置标记，等待按键处理决定是否需要重新显示
+                show_options = False
                 
                 # 获取用户输入
                 key = self._get_key()
@@ -221,10 +226,12 @@ class FormSystem:
                     selected_idx = (selected_idx - 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 1)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'down':
                     selected_idx = (selected_idx + 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 1)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'left' or key == 'right':
                     # Treat left/right like up/down for single select
                     if key == 'left':
@@ -233,6 +240,7 @@ class FormSystem:
                         selected_idx = (selected_idx + 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 1)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'enter':
                     selected_value = field.options[selected_idx]['value']
                     print(f"✓ 已选择: {field.options[selected_idx]['label']}")
@@ -240,8 +248,8 @@ class FormSystem:
                 elif key == 'esc':
                     print("⊘ 已取消")
                     return None
-                # 对于无效按键（包括 'space'、'unknown' 等），不执行任何操作，直接继续循环
-                # 这样就不会导致界面刷新
+                # 对于无效按键（包括 'space'、'unknown' 等），show_options 保持 False
+                # 这样下次循环就不会重新显示选项
         except KeyboardInterrupt:
             raise
     
@@ -284,15 +292,21 @@ class FormSystem:
                 print(f"    {field.description}")
             print(f"    (使用 ↑↓ 箭头键选择，ENTER 确认)")
             
+            show_options = True  # 标记是否需要显示选项
             while True:
-                # 显示选项
-                print()
-                for i, option in enumerate(field.options):
-                    if i == selected_idx:
-                        # 高亮选中的选项
-                        print(f"  ● {option['label']}")
-                    else:
-                        print(f"    {option['label']}")
+                # 根据标记决定是否显示选项
+                if show_options:
+                    # 显示选项
+                    print()
+                    for i, option in enumerate(field.options):
+                        if i == selected_idx:
+                            # 高亮选中的选项
+                            print(f"  ● {option['label']}")
+                        else:
+                            print(f"    {option['label']}")
+                
+                # 重置标记，等待按键处理决定是否需要重新显示
+                show_options = False
                 
                 # 获取用户输入
                 key = self._get_key()
@@ -301,10 +315,12 @@ class FormSystem:
                     selected_idx = (selected_idx - 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 1)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'down':
                     selected_idx = (selected_idx + 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 1)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'left' or key == 'right':
                     # Treat left/right like up/down for single select
                     if key == 'left':
@@ -313,6 +329,7 @@ class FormSystem:
                         selected_idx = (selected_idx + 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 1)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'enter':
                     selected_value = field.options[selected_idx]['value']
                     selected_label = field.options[selected_idx]['label']
@@ -329,8 +346,8 @@ class FormSystem:
                     for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')
                     return None
-                # 对于无效按键（包括 'space'、'unknown' 等），不执行任何操作，直接继续循环
-                # 这样就不会导致界面刷新
+                # 对于无效按键（包括 'space'、'unknown' 等），show_options 保持 False
+                # 这样下次循环就不会重新显示选项
         except KeyboardInterrupt:
             raise
     
@@ -364,20 +381,26 @@ class FormSystem:
         current_idx = 0
         
         try:
+            show_options = True  # 标记是否需要显示选项
             while True:
-                # 显示选项
-                print()
-                for i, option in enumerate(field.options):
-                    checkbox = "☑️" if i in selected_indices else "☐"
-                    if i == current_idx:
-                        # 高亮当前选项
-                        print(f"  ► {checkbox} {option['label']}")
-                    else:
-                        print(f"    {checkbox} {option['label']}")
+                # 根据标记决定是否显示选项
+                if show_options:
+                    # 显示选项
+                    print()
+                    for i, option in enumerate(field.options):
+                        checkbox = "☑️" if i in selected_indices else "☐"
+                        if i == current_idx:
+                            # 高亮当前选项
+                            print(f"  ► {checkbox} {option['label']}")
+                        else:
+                            print(f"    {checkbox} {option['label']}")
+                    
+                    # 显示已选择数量
+                    selected_count = len(selected_indices)
+                    print(f"\n  已选择: {selected_count} 项")
                 
-                # 显示已选择数量
-                selected_count = len(selected_indices)
-                print(f"\n  已选择: {selected_count} 项")
+                # 重置标记，等待按键处理决定是否需要重新显示
+                show_options = False
                 
                 # 获取用户输入
                 key = self._get_key()
@@ -386,10 +409,12 @@ class FormSystem:
                     current_idx = (current_idx - 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 3)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'down':
                     current_idx = (current_idx + 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 3)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'left' or key == 'right':
                     # Treat left/right like up/down for multi-select navigation
                     if key == 'left':
@@ -398,6 +423,7 @@ class FormSystem:
                         current_idx = (current_idx + 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 3)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'space':
                     # 切换选择
                     if current_idx in selected_indices:
@@ -406,6 +432,7 @@ class FormSystem:
                         selected_indices.add(current_idx)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 3)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'enter':
                     selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                     selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
@@ -419,8 +446,8 @@ class FormSystem:
                 elif key == 'esc':
                     print("⊘ 已取消")
                     return None
-                # 对于无效按键（包括 'unknown' 等），不执行任何操作，直接继续循环
-                # 这样就不会导致界面刷新
+                # 对于无效按键（包括 'unknown' 等），show_options 保持 False
+                # 这样下次循环就不会重新显示选项
         except KeyboardInterrupt:
             raise
     
@@ -464,20 +491,26 @@ class FormSystem:
                 print(f"    {field.description}")
             print(f"    (使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)")
             
+            show_options = True  # 标记是否需要显示选项
             while True:
-                # 显示选项
-                print()
-                for i, option in enumerate(field.options):
-                    checkbox = "☑️" if i in selected_indices else "☐"
-                    if i == current_idx:
-                        # 高亮当前选项
-                        print(f"  ► {checkbox} {option['label']}")
-                    else:
-                        print(f"    {checkbox} {option['label']}")
+                # 根据标记决定是否显示选项
+                if show_options:
+                    # 显示选项
+                    print()
+                    for i, option in enumerate(field.options):
+                        checkbox = "☑️" if i in selected_indices else "☐"
+                        if i == current_idx:
+                            # 高亮当前选项
+                            print(f"  ► {checkbox} {option['label']}")
+                        else:
+                            print(f"    {checkbox} {option['label']}")
+                    
+                    # 显示已选择数量
+                    selected_count = len(selected_indices)
+                    print(f"\n  已选择: {selected_count} 项")
                 
-                # 显示已选择数量
-                selected_count = len(selected_indices)
-                print(f"\n  已选择: {selected_count} 项")
+                # 重置标记，等待按键处理决定是否需要重新显示
+                show_options = False
                 
                 # 获取用户输入
                 key = self._get_key()
@@ -486,10 +519,12 @@ class FormSystem:
                     current_idx = (current_idx - 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 3)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'down':
                     current_idx = (current_idx + 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 3)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'left' or key == 'right':
                     # Treat left/right like up/down for multi-select navigation
                     if key == 'left':
@@ -498,6 +533,7 @@ class FormSystem:
                         current_idx = (current_idx + 1) % len(field.options)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 3)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'space':
                     # 切换选择
                     if current_idx in selected_indices:
@@ -506,6 +542,7 @@ class FormSystem:
                         selected_indices.add(current_idx)
                     # 清除之前的输出，重新显示
                     self._clear_lines(len(field.options) + 3)
+                    show_options = True  # 需要重新显示选项
                 elif key == 'enter':
                     selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                     selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
@@ -530,8 +567,8 @@ class FormSystem:
                     for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')
                     return None
-                # 对于无效按键（包括 'unknown' 等），不执行任何操作，直接继续循环
-                # 这样就不会导致界面刷新
+                # 对于无效按键（包括 'unknown' 等），show_options 保持 False
+                # 这样下次循环就不会重新显示选项
         except KeyboardInterrupt:
             raise
     
