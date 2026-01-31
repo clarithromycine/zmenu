@@ -388,6 +388,46 @@ class FormSystem:
         except KeyboardInterrupt:
             raise
     
+    def _print_completed_field(self, idx: int, total: int, label: str, value: Any, field_type: str, options: List[Dict]) -> None:
+        """
+        Print a completed field in the format [1/6] Full Name: Kenny
+        
+        Args:
+            idx: Current field index
+            total: Total number of fields
+            label: Field label
+            value: Field value
+            field_type: Type of the field ('text', 'single_choice', 'multi_choice')
+            options: List of options for choice fields
+        """
+        if value is not None:
+            # Format the value based on field type
+            if field_type == 'multi_choice' and isinstance(value, list):
+                # For multi-choice, show selected options
+                if value:
+                    # Find the labels for the selected values
+                    selected_labels = []
+                    for opt in options:
+                        if opt.get('value') in value:
+                            selected_labels.append(opt.get('label', opt.get('value')))
+                    value_str = ", ".join(selected_labels) if selected_labels else str(value)
+                else:
+                    value_str = "(no selection)"
+            elif field_type == 'single_choice':
+                # For single choice, find the label for the selected value
+                value_str = str(value)
+                for opt in options:
+                    if opt.get('value') == value:
+                        value_str = opt.get('label', value)
+                        break
+            else:
+                # For text and other types
+                value_str = str(value)
+            
+            print(f"[{idx}/{total}] {label}: {value_str}")
+        else:
+            print(f"[{idx}/{total}] {label}")
+    
     def process_form(self, form_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process form and collect user input.
@@ -404,11 +444,10 @@ class FormSystem:
             
             fields = form_data.get('fields', [])
             self.results = {}
-            field_map = {}  # Store field info for later use
             
+            # Process each field individually with the new approach
             for idx, field_data in enumerate(fields, 1):
                 field = FormField(field_data)
-                field_map[field.id] = field
                 
                 # Collect field value
                 if field.type == 'text':
@@ -426,6 +465,9 @@ class FormSystem:
                 # In interactive mode, invoke handler callback immediately after field collection
                 if self.mode == 'interactive':
                     self._invoke_field_handler(field.id, self.results[field.id], field)
+                
+                # Print the completed field result in the desired format
+                self._print_completed_field(idx, len(fields), field.label, value, field.type, field_data.get('options', []))
             
             # Format and return results
             return self._format_results(form_data, self.results)
