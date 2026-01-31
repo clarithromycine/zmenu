@@ -145,6 +145,9 @@ class FormSystem:
                 
                 # 如果是可选字段且用户按ENTER，跳过
                 if not user_input and not field.required:
+                    # Clear the input line and show the result
+                    import sys
+                    sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                     print(f"[{field_num}/{total_fields}] {field.label}: (skipped)")
                     return None
                 
@@ -154,7 +157,9 @@ class FormSystem:
                     print(f"❌ {error_msg}")
                     continue
                 
-                # Print the completed field in the desired format
+                # Clear the input line and show the result
+                import sys
+                sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                 result = user_input if user_input else None
                 print(f"[{field_num}/{total_fields}] {field.label}: {result}")
                 return result
@@ -292,7 +297,11 @@ class FormSystem:
                 elif key == 'enter':
                     selected_value = field.options[selected_idx]['value']
                     selected_label = field.options[selected_idx]['label']
-                    # Print the completed field in the desired format
+                    # Clear the selection interface and show the result
+                    import sys
+                    # Clear the options display (including the blank line and selection)
+                    for _ in range(len(field.options) + 2):  # +2 for blank line and confirmation
+                        sys.stdout.write('\033[1A\033[2K')
                     print(f"[{field_num}/{total_fields}] {field.label}: {selected_label}")
                     return selected_value
                 elif key == 'esc':
@@ -466,6 +475,12 @@ class FormSystem:
                 elif key == 'enter':
                     selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                     selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
+                    
+                    # Clear the selection interface and show the result
+                    import sys
+                    # Clear the options display (including the blank line, checkboxes, and selection count)
+                    for _ in range(len(field.options) + 3):  # +3 for blank line, checkboxes, and selection count
+                        sys.stdout.write('\033[1A\033[2K')
                     
                     # Print the completed field in the desired format
                     if selected_values:
