@@ -59,12 +59,7 @@ Perfect for CLI tools, system utilities, admin dashboards, and interactive appli
 - Perfect for REST APIs and simple submissions
 - Clean, atomic validation
 
-**See:** [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) for details
-- [FORM_MODES.md](FORM_MODES.md) - Complete API reference
-- [FORM_USAGE.md](FORM_USAGE.md) - Quick start guide
-- [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md) - Keyboard controls and interaction guide
-- [test_form_modes.py](test_form_modes.py) - Working examples
-- [ENHANCED_README.md](ENHANCED_README.md) - New pre-validation feature documentation
+**See:** [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md) - Keyboard controls and interaction guide
 
 ## 📁 Project Structure
 
