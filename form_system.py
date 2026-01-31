@@ -84,6 +84,7 @@ class FormSystem:
     
     def _get_text_input(self, field: FormField, field_num: int, total_fields: int) -> Optional[str]:
         """Get text input from user."""
+        # Display field with full prompts
         print(f"\n[{field_num}/{total_fields}] {field.label}")
         if field.description:
             print(f"    {field.description}")
@@ -115,6 +116,48 @@ class FormSystem:
                     continue
                 
                 return user_input if user_input else None
+        except KeyboardInterrupt:
+            raise
+    
+    def _get_text_input_dynamic(self, field: FormField, field_num: int, total_fields: int) -> Optional[str]:
+        """Get text input from user with dynamic UI updates."""
+        # Check for pre-validation
+        pre_validated_value = self._check_pre_validation(field)
+        if pre_validated_value is not None:
+            print(f"    (预设值: {pre_validated_value})")
+            use_existing = self._confirm_use_existing_value(pre_validated_value)
+            if use_existing:
+                print(f"[{field_num}/{total_fields}] {field.label}: {pre_validated_value}")
+                return pre_validated_value
+        
+        try:
+            # Show full field information
+            print(f"\n[{field_num}/{total_fields}] {field.label}")
+            if field.description:
+                print(f"    {field.description}")
+            if field.placeholder:
+                print(f"    (例如: {field.placeholder})")
+            if not field.required:
+                print(f"    (可选，按 ENTER 跳过)")
+            
+            while True:
+                user_input = input("➤ ").strip()
+                
+                # 如果是可选字段且用户按ENTER，跳过
+                if not user_input and not field.required:
+                    print(f"[{field_num}/{total_fields}] {field.label}: (skipped)")
+                    return None
+                
+                # 验证输入
+                is_valid, error_msg = self._validate_text(user_input, field)
+                if not is_valid:
+                    print(f"❌ {error_msg}")
+                    continue
+                
+                # Print the completed field in the desired format
+                result = user_input if user_input else None
+                print(f"[{field_num}/{total_fields}] {field.label}: {result}")
+                return result
         except KeyboardInterrupt:
             raise
     
@@ -179,6 +222,78 @@ class FormSystem:
                 elif key == 'enter':
                     selected_value = field.options[selected_idx]['value']
                     print(f"✓ 已选择: {field.options[selected_idx]['label']}")
+                    return selected_value
+                elif key == 'esc':
+                    print("⊘ 已取消")
+                    return None
+        except KeyboardInterrupt:
+            raise
+    
+    def _get_single_choice_dynamic(self, field: FormField, field_num: int, total_fields: int) -> Optional[str]:
+        """Get single choice selection from user with dynamic UI updates."""
+        # Check for pre-validation
+        pre_validated_value = self._check_pre_validation(field)
+        if pre_validated_value is not None:
+            # Find the option that matches the pre-validated value
+            matching_option = None
+            for option in field.options:
+                if option['value'] == pre_validated_value:
+                    matching_option = option
+                    break
+            if matching_option:
+                print(f"    (预设值: {matching_option['label']})")
+                use_existing = self._confirm_use_existing_value(matching_option['label'])
+                if use_existing:
+                    print(f"[{field_num}/{total_fields}] {field.label}: {matching_option['label']}")
+                    return pre_validated_value
+        
+        if not field.options:
+            print("❌ 没有可用的选项")
+            return None
+        
+        selected_idx = 0
+        
+        try:
+            # Show full field information
+            print(f"\n[{field_num}/{total_fields}] {field.label}")
+            if field.description:
+                print(f"    {field.description}")
+            print(f"    (使用 ↑↓ 箭头键选择，ENTER 确认)")
+            
+            while True:
+                # 显示选项
+                print()
+                for i, option in enumerate(field.options):
+                    if i == selected_idx:
+                        # 高亮选中的选项
+                        print(f"  ● {option['label']}")
+                    else:
+                        print(f"    {option['label']}")
+                
+                # 获取用户输入
+                key = self._get_key()
+                
+                if key == 'up':
+                    selected_idx = (selected_idx - 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 1)
+                elif key == 'down':
+                    selected_idx = (selected_idx + 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 1)
+                elif key == 'left' or key == 'right':
+                    # Treat left/right like up/down for single select
+                    if key == 'left':
+                        selected_idx = (selected_idx - 1) % len(field.options)
+                    else:  # key == 'right'
+                        selected_idx = (selected_idx + 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 1)
+                elif key == 'enter':
+                    selected_value = field.options[selected_idx]['value']
+                    selected_label = field.options[selected_idx]['label']
+                    # Print the completed field in the desired format
+                    print(f"[{field_num}/{total_fields}] {field.label}: {selected_label}")
                     return selected_value
                 elif key == 'esc':
                     print("⊘ 已取消")
@@ -267,6 +382,98 @@ class FormSystem:
                             print(f"    • {label}")
                     else:
                         print(f"\n✓ 未选择任何项")
+                    return selected_values if selected_values else []
+                elif key == 'esc':
+                    print("⊘ 已取消")
+                    return None
+        except KeyboardInterrupt:
+            raise
+    
+    def _get_multi_choice_dynamic(self, field: FormField, field_num: int, total_fields: int) -> Optional[List[str]]:
+        """Get multiple choice selections from user with dynamic UI updates."""
+        # Check for pre-validation
+        pre_validated_value = self._check_pre_validation(field)
+        if pre_validated_value is not None and isinstance(pre_validated_value, list):
+            # Find the options that match the pre-validated values
+            matching_options = []
+            for option in field.options:
+                if option['value'] in pre_validated_value:
+                    matching_options.append(option['label'])
+            
+            if matching_options:
+                print(f"    (预设值: {', '.join(matching_options)})")
+                use_existing = self._confirm_use_existing_value(', '.join(matching_options))
+                if use_existing:
+                    print(f"[{field_num}/{total_fields}] {field.label}: {', '.join(matching_options)}")
+                    return pre_validated_value
+        
+        if not field.options:
+            print("❌ 没有可用的选项")
+            return None
+        
+        selected_indices = set()
+        current_idx = 0
+        
+        try:
+            # Show full field information
+            print(f"\n[{field_num}/{total_fields}] {field.label}")
+            if field.description:
+                print(f"    {field.description}")
+            print(f"    (使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)")
+            
+            while True:
+                # 显示选项
+                print()
+                for i, option in enumerate(field.options):
+                    checkbox = "☑️" if i in selected_indices else "☐"
+                    if i == current_idx:
+                        # 高亮当前选项
+                        print(f"  ► {checkbox} {option['label']}")
+                    else:
+                        print(f"    {checkbox} {option['label']}")
+                
+                # 显示已选择数量
+                selected_count = len(selected_indices)
+                print(f"\n  已选择: {selected_count} 项")
+                
+                # 获取用户输入
+                key = self._get_key()
+                
+                if key == 'up':
+                    current_idx = (current_idx - 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 3)
+                elif key == 'down':
+                    current_idx = (current_idx + 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 3)
+                elif key == 'left' or key == 'right':
+                    # Treat left/right like up/down for multi-select navigation
+                    if key == 'left':
+                        current_idx = (current_idx - 1) % len(field.options)
+                    else:  # key == 'right'
+                        current_idx = (current_idx + 1) % len(field.options)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 3)
+                elif key == 'space':
+                    # 切换选择
+                    if current_idx in selected_indices:
+                        selected_indices.remove(current_idx)
+                    else:
+                        selected_indices.add(current_idx)
+                    # 清除之前的输出，重新显示
+                    self._clear_lines(len(field.options) + 3)
+                elif key == 'enter':
+                    selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
+                    selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
+                    
+                    # Print the completed field in the desired format
+                    if selected_values:
+                        result_str = ', '.join(selected_labels)
+                        print(f"[{field_num}/{total_fields}] {field.label}: {result_str}")
+                    else:
+                        print(f"[{field_num}/{total_fields}] {field.label}: (no selection)")
+                    
                     return selected_values if selected_values else []
                 elif key == 'esc':
                     print("⊘ 已取消")
@@ -430,12 +637,13 @@ class FormSystem:
     
     def process_form(self, form_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process form and collect user input.
+        Process form and collect user input with dynamic UI.
         
         In 'interactive' mode: Calls handler callbacks after each field is collected.
         In 'submit' mode: Collects all fields and returns formatted results (no immediate processing).
         """
         try:
+            # Print initial form header
             print("\n" + "="*60)
             print(f"  {form_data.get('icon', '📝')} {form_data.get('title', '表单')}")
             print("="*60)
@@ -445,29 +653,26 @@ class FormSystem:
             fields = form_data.get('fields', [])
             self.results = {}
             
-            # Process each field individually with the new approach
+            # Process each field with dynamic UI updates
             for idx, field_data in enumerate(fields, 1):
                 field = FormField(field_data)
                 
-                # Collect field value
+                # Collect field value with dynamic display
                 if field.type == 'text':
-                    value = self._get_text_input(field, idx, len(fields))
+                    value = self._get_text_input_dynamic(field, idx, len(fields))
                     self.results[field.id] = value
                 
                 elif field.type == 'single_choice':
-                    value = self._get_single_choice(field, idx, len(fields))
+                    value = self._get_single_choice_dynamic(field, idx, len(fields))
                     self.results[field.id] = value
                 
                 elif field.type == 'multi_choice':
-                    value = self._get_multi_choice(field, idx, len(fields))
+                    value = self._get_multi_choice_dynamic(field, idx, len(fields))
                     self.results[field.id] = value
                 
                 # In interactive mode, invoke handler callback immediately after field collection
                 if self.mode == 'interactive':
                     self._invoke_field_handler(field.id, self.results[field.id], field)
-                
-                # Print the completed field result in the desired format
-                self._print_completed_field(idx, len(fields), field.label, value, field.type, field_data.get('options', []))
             
             # Format and return results
             return self._format_results(form_data, self.results)
