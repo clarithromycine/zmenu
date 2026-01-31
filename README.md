@@ -62,6 +62,7 @@ Perfect for CLI tools, system utilities, admin dashboards, and interactive appli
 **See:** [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) for details
 - [FORM_MODES.md](FORM_MODES.md) - Complete API reference
 - [FORM_USAGE.md](FORM_USAGE.md) - Quick start guide
+- [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md) - Keyboard controls and interaction guide
 - [test_form_modes.py](test_form_modes.py) - Working examples
 - [ENHANCED_README.md](ENHANCED_README.md) - New pre-validation feature documentation
 
@@ -96,6 +97,32 @@ python main.py
 | **Enter** | Select the highlighted menu item |
 | **ESC** | Return to parent menu (or exit if at root) |
 | **Ctrl+C** | Force exit from any menu |
+
+## ⌨️ Keyboard Controls in Forms
+
+ZMenu provides intuitive keyboard controls for form interactions:
+
+### Choice Fields (Single/Multi Selection)
+
+| Control | Action |
+|---------|--------|
+| **↑ ↓ Arrow Keys** | Navigate between options |
+| **← → Arrow Keys** | Navigate between options (alternative to ↑ ↓) |
+| **Enter** | Confirm selection and proceed |
+| **ESC** | Cancel selection |
+| **Space** | Toggle selection (multi-choice only) |
+| **Other Keys** | Ignored (no interface refresh) |
+
+**Important:** Invalid keys (letters, numbers, etc.) are silently ignored and do not cause interface refresh, ensuring smooth user experience.
+
+### Text Input Fields
+
+| Control | Action |
+|---------|--------|
+| **Type normally** | Enter text as usual |
+| **Enter** | Submit text input |
+| **Backspace/Delete** | Edit text as standard |
+| **ESC** | Cancel input (when supported) |
 
 ## 🏗️ Architecture
 
