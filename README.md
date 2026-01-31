@@ -39,13 +39,19 @@ Perfect for CLI tools, system utilities, admin dashboards, and interactive appli
 
 ## 📝 Form System (NEW - v2.0)
 
-**Dual-mode form system** with two powerful approaches:
+**Dual-mode form system** with three powerful approaches:
 
 ### Interactive Mode 🔄
 - Process each field with immediate callbacks
 - Real-time validation and data transformation
 - Perfect for complex workflows and database operations
 - Handler pattern: `on_field_<field_id>(value, field)`
+
+### Pre-Validation Mode 🔄 (NEW!)
+- Check for existing values before prompting user input
+- Suggest default values based on previously stored data
+- Allow users to confirm or override existing values
+- Handler pattern: `pre_validate_<field_id>(field, current_results)`
 
 ### Submit Mode 📤
 - Batch collection and unified submission
@@ -57,6 +63,7 @@ Perfect for CLI tools, system utilities, admin dashboards, and interactive appli
 - [FORM_MODES.md](FORM_MODES.md) - Complete API reference
 - [FORM_USAGE.md](FORM_USAGE.md) - Quick start guide
 - [test_form_modes.py](test_form_modes.py) - Working examples
+- [ENHANCED_README.md](ENHANCED_README.md) - New pre-validation feature documentation
 
 ## 📁 Project Structure
 
@@ -212,6 +219,42 @@ app = ConsoleApp("Application Title")
 menu = app.get_menu()
 menu.register(*decorated_functions)
 app.run()
+```
+
+### `FormSystem` - Enhanced Form System with Pre-Validation
+
+Initialize form system with pre-validation support:
+
+```python
+form_system = FormSystem(
+    mode='interactive',                    # 'interactive' or 'submit'
+    handler=field_handler,                 # Handler for post-input callbacks
+    pre_validation_handler=pre_validator,  # Handler for pre-validation (optional)
+    endpoint=None                          # API endpoint for submit mode
+)
+```
+
+### Pre-Validation Handler Pattern
+
+Create a handler class with pre-validation methods:
+
+```python
+class FormPreValidationHandler:
+    def pre_validate_{field_id}(self, field, current_results):
+        """
+        Pre-validate a field before user input.
+        
+        Args:
+            field: The FormField object containing field metadata
+            current_results: Dictionary of results collected so far in the form
+            
+        Returns:
+            Pre-validated value if available, None otherwise
+        """
+        # Check for existing value in your data store
+        if some_condition:
+            return existing_value
+        return None
 ```
 
 ## 💻 Creating Your Own Application

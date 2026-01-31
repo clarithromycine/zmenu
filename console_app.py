@@ -302,6 +302,45 @@ class ConsoleApp:
         
         return True
 
+    @MenuItemCmd("form_with_pre_validation", "Form with Pre-Validation", order=8, icon="🔄", long_desc="Form with pre-validation to suggest existing values")
+    def form_pre_validation_demo(self):
+        """Demonstrate the form system with pre-validation functionality."""
+        # Create handler objects
+        handler = FormFieldHandler()
+        pre_validation_handler = FormPreValidationHandler()
+        
+        # Initialize FormSystem in interactive mode with pre-validation
+        form_system = FormSystem(
+            mode='interactive', 
+            handler=handler,
+            pre_validation_handler=pre_validation_handler
+        )
+        
+        # Load form from JSON file
+        form_file = os.path.join(os.path.dirname(__file__), 'form_example.json')
+        
+        if not os.path.exists(form_file):
+            print(f"\n❌ 表单文件未找到: {form_file}")
+            return True
+        
+        try:
+            form_data = form_system.load_form_from_file(form_file)
+            form_definition = form_data.get('form', {})
+            
+            # Process the form with pre-validation
+            results = form_system.process_form(form_definition)
+            
+            if results is None:
+                return True
+            
+            # Display results
+            form_system.print_results(results)
+            
+        except Exception as e:
+            print(f"\n❌ 错误: {str(e)}")
+        
+        return True
+
 
 class FormFieldHandler:
     """Handler for form field callbacks in interactive mode."""
@@ -359,3 +398,52 @@ class FormFieldHandler:
             print(f"  ✓ Bio length: {len(value)} characters")
         else:
             print(f"  ⚠️  Bio field skipped")
+
+
+class FormPreValidationHandler:
+    """Handler for form pre-validation callbacks."""
+    
+    def __init__(self):
+        # Sample existing data for demonstration
+        self.existing_data = {
+            "name": "Kenny Zhang",
+            "email": "kenny@example.com",
+            "country": "cn",
+            "interests": ["tech", "music"],
+            "subscription": "pro"
+        }
+    
+    def pre_validate_name(self, field, current_results):
+        """Pre-validate name field."""
+        if "name" in self.existing_data:
+            return self.existing_data["name"]
+        return None
+    
+    def pre_validate_email(self, field, current_results):
+        """Pre-validate email field."""
+        if "email" in self.existing_data:
+            return self.existing_data["email"]
+        return None
+    
+    def pre_validate_country(self, field, current_results):
+        """Pre-validate country field."""
+        if "country" in self.existing_data:
+            return self.existing_data["country"]
+        return None
+    
+    def pre_validate_interests(self, field, current_results):
+        """Pre-validate interests field."""
+        if "interests" in self.existing_data:
+            return self.existing_data["interests"]
+        return None
+    
+    def pre_validate_subscription(self, field, current_results):
+        """Pre-validate subscription field."""
+        if "subscription" in self.existing_data:
+            return self.existing_data["subscription"]
+        return None
+    
+    def pre_validate_bio(self, field, current_results):
+        """Pre-validate bio field."""
+        # Don't provide a default for bio since it's usually unique
+        return None

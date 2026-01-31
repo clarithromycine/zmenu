@@ -35,7 +35,7 @@ class FormSystem:
     - 'submit': Collect all fields, validate, generate JSON and submit to endpoint
     """
     
-    def __init__(self, mode: str = 'submit', handler: Optional[Any] = None, endpoint: Optional[str] = None):
+    def __init__(self, mode: str = 'submit', handler: Optional[Any] = None, endpoint: Optional[str] = None, pre_validation_handler: Optional[Any] = None):
         """
         Initialize FormSystem.
         
@@ -43,9 +43,11 @@ class FormSystem:
             mode: 'interactive' or 'submit' (default: 'submit')
             handler: Handler object with callback methods (required for interactive mode)
             endpoint: API endpoint URL (optional for submit mode, can handle JSON generation only)
+            pre_validation_handler: Handler object with pre-validation methods (optional)
         """
         self.mode = mode  # 'interactive' or 'submit'
         self.handler = handler
+        self.pre_validation_handler = pre_validation_handler
         self.endpoint = endpoint
         self.menu = Menu(title="Form")
         self.results = {}
@@ -90,6 +92,14 @@ class FormSystem:
         if not field.required:
             print(f"    (可选，按 ENTER 跳过)")
         
+        # Check for pre-validation
+        pre_validated_value = self._check_pre_validation(field)
+        if pre_validated_value is not None:
+            print(f"    (预设值: {pre_validated_value})")
+            use_existing = self._confirm_use_existing_value(pre_validated_value)
+            if use_existing:
+                return pre_validated_value
+        
         try:
             while True:
                 user_input = input("➤ ").strip()
@@ -114,6 +124,21 @@ class FormSystem:
         if field.description:
             print(f"    {field.description}")
         print(f"    (使用 ↑↓ 箭头键选择，ENTER 确认)")
+        
+        # Check for pre-validation
+        pre_validated_value = self._check_pre_validation(field)
+        if pre_validated_value is not None:
+            # Find the option that matches the pre-validated value
+            matching_option = None
+            for option in field.options:
+                if option['value'] == pre_validated_value:
+                    matching_option = option
+                    break
+            if matching_option:
+                print(f"    (预设值: {matching_option['label']})")
+                use_existing = self._confirm_use_existing_value(matching_option['label'])
+                if use_existing:
+                    return pre_validated_value
         
         if not field.options:
             print("❌ 没有可用的选项")
@@ -167,6 +192,21 @@ class FormSystem:
         if field.description:
             print(f"    {field.description}")
         print(f"    (使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)")
+        
+        # Check for pre-validation
+        pre_validated_value = self._check_pre_validation(field)
+        if pre_validated_value is not None and isinstance(pre_validated_value, list):
+            # Find the options that match the pre-validated values
+            matching_options = []
+            for option in field.options:
+                if option['value'] in pre_validated_value:
+                    matching_options.append(option['label'])
+            
+            if matching_options:
+                print(f"    (预设值: {', '.join(matching_options)})")
+                use_existing = self._confirm_use_existing_value(', '.join(matching_options))
+                if use_existing:
+                    return pre_validated_value
         
         if not field.options:
             print("❌ 没有可用的选项")
@@ -300,6 +340,53 @@ class FormSystem:
         for _ in range(num_lines):
             sys.stdout.write('\033[1A')  # Move cursor up
             sys.stdout.write('\033[K')   # Clear line
+    
+    def _check_pre_validation(self, field: FormField) -> Optional[Any]:
+        """
+        Check if there's a pre-validation handler for this field.
+        
+        Args:
+            field: The field to check for pre-validation
+            
+        Returns:
+            Pre-validated value if available, None otherwise
+        """
+        if not self.pre_validation_handler:
+            return None
+        
+        # Construct callback method name
+        callback_name = f'pre_validate_{field.id}'
+        
+        if hasattr(self.pre_validation_handler, callback_name):
+            callback_method = getattr(self.pre_validation_handler, callback_name)
+            try:
+                # Pass the current results so far to the pre-validation handler
+                return callback_method(field, self.results)
+            except Exception as e:
+                print(f"❌ Error in pre-validation for field '{field.id}': {str(e)}")
+                return None
+        else:
+            return None
+    
+    def _confirm_use_existing_value(self, value_display: str) -> bool:
+        """
+        Ask user whether to use an existing/pre-validated value.
+        
+        Args:
+            value_display: String representation of the existing value
+            
+        Returns:
+            True if user wants to use the existing value, False otherwise
+        """
+        try:
+            # Use the existing yes_no_prompt functionality
+            confirmation = self.menu.yes_no_prompt(
+                question=f"Use existing value: {value_display}?",
+                description="Press LEFT/RIGHT to select, ENTER to confirm"
+            )
+            return confirmation is True
+        except KeyboardInterrupt:
+            raise
     
     def process_form(self, form_data: Dict[str, Any]) -> Dict[str, Any]:
         """
