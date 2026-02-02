@@ -244,7 +244,10 @@ class Menu:
         ansi = get_ansi_scheme()
         num_items = len(self._item_order)
         back_idx = num_items
-        
+        primary_code = ansi.get_theme_color('primary')
+        secondary_code = ansi.get_theme_color('secondary')
+        reset_code = ansi.get_reset()
+                
         for idx, key in enumerate(self._item_order, 1):
             label = self.items[key].label
             long_desc = self.items[key].long_desc
@@ -252,20 +255,16 @@ class Menu:
             # Highlight selected item with description
             if idx - 1 == selected_idx:
                 desc_text = ""
-                if long_desc:
-                    secondary_code = ansi.get_theme_color('secondary')
-                    reset_code = ansi.get_reset()
-                    desc_text = f" {secondary_code}({long_desc}){reset_code}"
-                primary_code = ansi.get_theme_color('primary')
-                reset_code = ansi.get_reset()
+                if long_desc:                                        
+                    desc_text = f" {secondary_code}({long_desc}){reset_code}"                                
                 print(f"  {primary_code}➤ {idx}. {label}{desc_text} {reset_code}")
             else:
                 print(f"    {idx}. {label}")
         
         # Show back option if there's a parent menu
         if self.parent:
-            if back_idx == selected_idx:
-                print(f"  ➤ {num_items + 1}. Back to {self.parent.title} ◄")
+            if back_idx == selected_idx:                
+                print(f"  {primary_code}➤ {num_items + 1}. Back to {self.parent.title} {reset_code}")
             else:
                 print(f"    {num_items + 1}. Back to {self.parent.title}")
 
