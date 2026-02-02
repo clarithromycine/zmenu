@@ -51,7 +51,8 @@ class ConsoleApp:
             {'name': 'num2', 'type': 'number', 'description': 'Second number', 'validation_rule': 'required'},
         ],
         options=[
-            {'name': 'operation', 'type': 'choice', 'description': 'Operation', 'default': 'add', 'choices': ['add', 'subtract', 'multiply', 'divide']},
+            {'name': 'operation', 'type': 'choice', 'description': 'Operation','choices': ['add', 'subtract', 'multiply', 'divide']},
+            {'name': 'text', 'type': 'string', 'description': 'a string text'},
         ]
     )
     def show_calculator(self, params, options):
@@ -61,13 +62,15 @@ class ConsoleApp:
             params: Dict with 'num1' and 'num2'
             options: Dict with 'operation'
         """
-        
+
         try:
             num1 = float(params.get('num1', 0))
             num2 = float(params.get('num2', 0))
             operation = options.get('operation', 'add')
+
+            print(options.get('text', 'no value'))
             
-            result = None
+            result = None            
             if operation == 'add':
                 result = num1 + num2
                 op_symbol = '+'
@@ -83,6 +86,9 @@ class ConsoleApp:
                     return True
                 result = num1 / num2
                 op_symbol = '÷'
+            else:                
+                print(f"\n❌ Unknown operation: {operation}")
+                return True
             
             print(f"\n  {num1} {op_symbol} {num2} = {result}")
         except ValueError:

@@ -26,6 +26,7 @@ class FormField:
         self.required = field_data.get('required', False)
         self.options = field_data.get('options', [])
         self.validation = field_data.get('validation', {})
+        self.default = field_data.get('default', None)
         self.value = None
 
 
@@ -298,7 +299,14 @@ class FormSystem:
                 print("❌ No options available")
                 return None
             
+            # Initialize selected_idx based on default value if provided
             selected_idx = 0
+            if field.default is not None:
+                # Find the index of the default value
+                for idx, option in enumerate(field.options):
+                    if option.get('value') == field.default or option.get('label') == field.default:
+                        selected_idx = idx
+                        break
             
             
             # Track the number of lines printed for this field

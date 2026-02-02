@@ -552,7 +552,7 @@ class Menu:
         
         form = FormSystem(mode='interactive')
         
-        # Build form_data structure with all parameters and options
+        # Build form_data structure with required parameters
         fields = []
         
         # Add required parameters
@@ -585,37 +585,20 @@ class Menu:
             
             fields.append(field_data)
         
-        # Add optional parameters
-        for option in options_config:
-            name = option.get('name', '')
-            option_type = option.get('type', 'text')
-            description = option.get('description', '')
-            default_value = option.get('default', '')
-            
+        # Add optional parameters as a single text field
+        if options_config:
+            # Build description showing available options
+            options_desc = "Optional parameters (format: --key1 value1 --key2 value2)"
+
             field_data = {
-                'id': name,
-                'name': name,
-                'label': name,
-                'description': description,
-                'type': 'text',  # Default to text
+                'id': '__options__',
+                'name': '__options__',
+                'label': 'Optional Parameters',
+                'description': options_desc,
+                'type': 'text',
                 'required': False,
-                'default': default_value,
+                'default': None,
             }
-            
-            # Map option types to form field types
-            if option_type == 'bool':
-                field_data['type'] = 'confirm'
-                field_data['default'] = default_value in ['true', True, 'True', '1']
-            elif option_type == 'choice':
-                field_data['type'] = 'single_choice'
-                # Convert choice strings to dicts with 'label' and 'value' fields for FormSystem
-                choices = option.get('choices', [])
-                field_data['options'] = [{'label': choice, 'value': choice} for choice in choices]
-                if default_value:
-                    field_data['default'] = default_value
-            else:  # text
-                field_data['type'] = 'text'
-            
             fields.append(field_data)
         
         # Create form_data structure
@@ -632,23 +615,136 @@ class Menu:
         if result is None:
             return None, None
         
-        # Separate params and options
+        # Separate collected params
         collected_params = {}
-        collected_options = {}
-        
         params_names = set(p.get('name', '') for p in params_config)
-        
-        # Extract actual values from FormSystem's structured result
         form_data_values = result.get('data', {})
         
         for key, field_info in form_data_values.items():
+            if key == '__options__':
+                continue  # Handle separately
             value = field_info.get('value')
             if key in params_names:
                 collected_params[key] = value
-            else:
-                collected_options[key] = value
+        
+        # Parse optional parameters from the command-line style input
+        collected_options = {}
+        if options_config:
+            options_input = form_data_values.get('__options__', {}).get('value', '')
+            if options_input:
+                collected_options = self._parse_options_input(options_input, options_config)
+            # If no input, collected_options stays empty, allowing .get() defaults to work
         
         return collected_params, collected_options
+    
+    def _parse_options_input(self, input_str: str, options_config: List[Dict]) -> Dict[str, Any]:
+        """Parse command-line style options input (--key1 value1 --key2 value2).
+        Supports quoted values with spaces: --key "value with spaces"
+        Supports escape sequences: \" for literal quote, \\ for literal backslash
+        
+        Args:
+            input_str: Input string with options
+            options_config: List of option definitions
+        
+        Returns:
+            Dict of parsed option values (only includes explicitly provided options)
+        """
+        import re
+        
+        # Start with empty result - only add options that user explicitly provides
+        result = {}
+        
+        # Parse the input string with support for quoted values
+        i = 0
+        while i < len(input_str):
+            # Skip whitespace
+            while i < len(input_str) and input_str[i].isspace():
+                i += 1
+            
+            if i >= len(input_str):
+                break
+            
+            # Check if this is an option flag
+            if input_str[i:i+2] == '--':
+                # Extract option name
+                i += 2
+                key_start = i
+                while i < len(input_str) and input_str[i] not in ' \t\n"':
+                    i += 1
+                key = input_str[key_start:i]
+                
+                # Skip whitespace after key
+                while i < len(input_str) and input_str[i] in ' \t':
+                    i += 1
+                
+                # Find option config
+                option_config = None
+                for opt in options_config:
+                    if opt.get('name', '') == key:
+                        option_config = opt
+                        break
+                
+                if option_config:
+                    option_type = option_config.get('type', 'text')
+                    
+                    if option_type == 'bool':
+                        # Boolean flag - presence means True
+                        result[key] = True
+                    elif i < len(input_str) and input_str[i] != '-':
+                        # Get the value
+                        if input_str[i] == '"':
+                            # Quoted value - extract until closing quote, handle escapes
+                            i += 1
+                            value = []
+                            while i < len(input_str):
+                                if input_str[i] == '\\' and i + 1 < len(input_str):
+                                    # Escape sequence
+                                    next_char = input_str[i + 1]
+                                    if next_char == '"':
+                                        value.append('"')
+                                        i += 2
+                                    elif next_char == '\\':
+                                        value.append('\\')
+                                        i += 2
+                                    else:
+                                        # Unknown escape, keep the backslash
+                                        value.append(input_str[i])
+                                        i += 1
+                                elif input_str[i] == '"':
+                                    # End of quoted value
+                                    i += 1
+                                    break
+                                else:
+                                    value.append(input_str[i])
+                                    i += 1
+                            value = ''.join(value)
+                        else:
+                            # Unquoted value - extract until next space or --
+                            value_start = i
+                            while i < len(input_str) and not input_str[i].isspace() and input_str[i:i+2] != '--':
+                                i += 1
+                            value = input_str[value_start:i]
+                        
+                        # Type conversion
+                        if option_type == 'number':
+                            try:
+                                result[key] = float(value)
+                            except:
+                                result[key] = value
+                        else:
+                            result[key] = value
+                    else:
+                        # No value provided, skip
+                        pass
+                else:
+                    # Unknown option, skip to next --
+                    while i < len(input_str) and input_str[i:i+2] != '--':
+                        i += 1
+            else:
+                # Not an option flag, skip this character
+                i += 1
+        
+        return result
     
     def _create_validator(self, validation_rule: str) -> Callable:
         """Create a validator function based on rule.
