@@ -20,7 +20,7 @@
         {
           "cmd": "sysinfo",
           "label": "System Information",
-          "icon": "ℹ️",
+          "icon": "💻",
           "desc": "Display system and environment details"
         },
         {

@@ -211,11 +211,13 @@ class AnsiScheme:
         else:
             return f"  {checkbox} {label}"
     
-    def get_yes_no_text(self, selected_index: int) -> str:
-        """Format yes/no selection text.
+    def get_yes_no_text(self, selected_index: int, yes_text: str = "YES", no_text: str = "NO") -> str:
+        """Format yes/no selection text with custom options.
         
         Args:
             selected_index: 0 for YES, 1 for NO
+            yes_text: Custom text for YES option (default: "YES")
+            no_text: Custom text for NO option (default: "NO")
         
         Returns:
             Formatted yes/no text
@@ -223,10 +225,10 @@ class AnsiScheme:
         primary_code = self.get_color('primary')
         reset_code = self.get_reset()
         
-        yes_text = f"{primary_code}➤ YES{reset_code}" if selected_index == 0 else "  YES"
-        no_text = f"{primary_code}➤ NO{reset_code}" if selected_index == 1 else "  NO"
+        yes_option = f"{primary_code}➤ {yes_text}{reset_code}" if selected_index == 0 else f"  {yes_text}"
+        no_option = f"{primary_code}➤ {no_text}{reset_code}" if selected_index == 1 else f"  {no_text}"
         
-        return f"  {yes_text} / {no_text}"
+        return f"  {yes_option} / {no_option}"
 
 
 # Global ANSI scheme instance

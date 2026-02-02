@@ -356,32 +356,36 @@ class Menu:
         finally:
             self._show_cursor()
     
-    def _redraw_yes_no_in_place(self, selected: int) -> None:
+    def _redraw_yes_no_in_place(self, selected: int, yes_text: str = "YES", no_text: str = "NO") -> None:
         """Redraw only the yes/no selection line in place.
         
         Args:
             selected: 0 for YES, 1 for NO
+            yes_text: Custom text for YES option (default: "YES")
+            no_text: Custom text for NO option (default: "NO")
         """
         ansi = get_ansi_scheme()
-        yes_text = f"{ansi.get_theme_color('primary')}➤ YES{ansi.get_reset()}" if selected == 0 else "  YES"
-        no_text = f"{ansi.get_theme_color('primary')}➤ NO{ansi.get_reset()}" if selected == 1 else "  NO"
+        yes_option = f"{ansi.get_theme_color('primary')}➤ {yes_text}{ansi.get_reset()}" if selected == 0 else f"  {yes_text}"
+        no_option = f"{ansi.get_theme_color('primary')}➤ {no_text}{ansi.get_reset()}" if selected == 1 else f"  {no_text}"
         # Move cursor up 3 lines to YES/NO line, clear it, and reprint
         sys.stdout.write(ansi.get_cursor_move('up', 3))  # Move up 3 lines
         sys.stdout.write(ansi.get_screen('clear_line'))  # Clear the line
         sys.stdout.write('\r')       # Return to start of line
-        sys.stdout.write(f"  {yes_text} / {no_text}\n")
+        sys.stdout.write(f"  {yes_option} / {no_option}\n")
         sys.stdout.write(ansi.get_cursor_move('down', 3))  # Move down 3 lines back to input position
         sys.stdout.flush()
     
-    def yes_no_prompt(self, question: str = "Do you want to continue?", description: str = "") -> bool:
+    def yes_no_prompt(self, question: str = "Do you want to continue?", description: str = "", yes_text: str = "YES", no_text: str = "NO") -> bool:
         """Display a yes/no prompt with left/right arrow key selection.
         
         Args:
             question: The question to display
             description: Optional description to display
+            yes_text: Custom text for "yes" option (default: "YES")
+            no_text: Custom text for "no" option (default: "NO")
         
         Returns:
-            True if user selects "Yes", False if "No"
+            True if user selects yes_text, False if no_text
         """
         ansi = get_ansi_scheme()
         self._hide_cursor()
@@ -401,9 +405,9 @@ class Menu:
             while True:
                 # Display yes/no (first time normally, then update in place)
                 if first_time:
-                    yes_text = f"{ansi.get_theme_color('primary')}➤ YES{ansi.get_reset()}" if selected == 0 else "  YES"
-                    no_text = f"{ansi.get_theme_color('primary')}➤ NO{ansi.get_reset()}" if selected == 1 else "  NO"
-                    print(f"  {yes_text} / {no_text}")
+                    yes_option = f"{ansi.get_theme_color('primary')}➤ {yes_text}{ansi.get_reset()}" if selected == 0 else f"  {yes_text}"
+                    no_option = f"{ansi.get_theme_color('primary')}➤ {no_text}{ansi.get_reset()}" if selected == 1 else f"  {no_text}"
+                    print(f"  {yes_option} / {no_option}")
                     print("\n[Use Arrow Keys ← → to select, Enter to confirm]")
                     first_time = False
                 
@@ -418,11 +422,11 @@ class Menu:
                         if value == 'LEFT':
                             if selected != 0:
                                 selected = 0
-                                self._redraw_yes_no_in_place(selected)
+                                self._redraw_yes_no_in_place(selected, yes_text, no_text)
                         elif value == 'RIGHT':
                             if selected != 1:
                                 selected = 1
-                                self._redraw_yes_no_in_place(selected)
+                                self._redraw_yes_no_in_place(selected, yes_text, no_text)
                         continue
                     if kind == 'ENTER':
                         return selected == 0

@@ -177,18 +177,25 @@ class ConsoleApp:
         print(f"  Current time: {current_time}")
         return True
 
-    @MenuItemCmd("confirm")
+    @MenuItemCmd(
+        "confirm"
+    )
     def confirm_demo(self, params, options):
-        """Demonstrate the yes/no prompt with left/right arrow keys."""
+        """Demonstrate the yes/no prompt with customizable options."""
+        yes_option ="CONFIRM"
+        no_option = "CANCEL"
+        
         result = self.main_menu.yes_no_prompt(
             question="Do you want to continue?",
-            description="Use LEFT/RIGHT arrow keys to select, then press ENTER"
+            description="Use LEFT/RIGHT arrow keys to select, then press ENTER",
+            yes_text=yes_option,
+            no_text=no_option
         )
         
         if result is True:
-            print("\n✓ You selected: YES")
+            print(f"\n✓ You selected: {yes_option}")
         elif result is False:
-            print("\n✗ You selected: NO")
+            print(f"\n✗ You selected: {no_option}")
         else:
             print("\n⊘ You cancelled the operation")
         
