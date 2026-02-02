@@ -1,41 +1,40 @@
 {
   "form_id": "user_registration_form",
   "form_title": "用户注册表单",
-  "timestamp": "2026-01-30 18:42:38",
+  "timestamp": "2026-01-30 18:45:33",
   "data": {
     "name": {
       "label": "姓名",
       "type": "text",
-      "value": "李四"
+      "value": "11"
     },
     "email": {
       "label": "邮箱地址",
       "type": "text",
-      "value": "is99zsq@gmail.com"
+      "value": "sss"
     },
     "country": {
       "label": "选择国家/地区",
       "type": "single_choice",
-      "value": "us"
+      "value": "cn"
     },
     "interests": {
       "label": "选择您的兴趣",
       "type": "multi_choice",
       "value": [
-        "music",
-        "tech",
-        "travel"
+        "sports",
+        "reading"
       ]
     },
     "subscription": {
       "label": "选择订阅类型",
       "type": "single_choice",
-      "value": "pro"
+      "value": "free"
     },
     "bio": {
       "label": "个人简介",
       "type": "text",
-      "value": "这里放自我简介"
+      "value": "11111"
     }
   }
 }
