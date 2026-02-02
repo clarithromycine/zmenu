@@ -152,15 +152,15 @@ class Menu:
                 cmd = item_config.get('cmd')
                 name = item_config.get('name')
                 icon = item_config.get('icon', '')
-                desc = item_config.get('desc', '')
+                label = item_config.get('label', '')
                 long_desc = item_config.get('long_desc', '')
                 subitems = item_config.get('items', [])
                 
                 if cmd:  # This is an action item
                     fn = cmd_to_fn.get(cmd)
                     if fn:
-                        label = desc or cmd
-                        current_menu.add_item(cmd, label, fn, icon, long_desc)
+                        item_label = label or cmd
+                        current_menu.add_item(cmd, item_label, fn, icon, long_desc)
                 
                 elif name and subitems:  # This is a submenu
                     # Create submenu - pass icon in icon param, not in label

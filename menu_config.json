@@ -2,7 +2,7 @@
   "menu": [
     {
       "cmd": "greeting",
-      "desc": "Say Hello",
+      "label": "Say Hello",
       "icon": "👋",
       "long_desc": "Display a friendly greeting message"
     },
@@ -13,19 +13,19 @@
       "items": [
         {
           "cmd": "calc",
-          "desc": "Calculator",
+          "label": "Calculator",
           "icon": "🧮",
           "long_desc": "Perform basic arithmetic operations"
         },
         {
           "cmd": "sysinfo",
-          "desc": "System Information",
+          "label": "System Information",
           "icon": "ℹ️",
           "long_desc": "Display system and environment details"
         },
         {
           "cmd": "time",
-          "desc": "Show Time",
+          "label": "Show Time",
           "icon": "🕐",
           "long_desc": "Display the current date and time"
         }
@@ -43,13 +43,13 @@
           "items": [
             {
               "cmd": "theme",
-              "desc": "Change Theme",
+              "label": "Change Theme",
               "icon": "🎨",
               "long_desc": "Customize the visual appearance"
             },
             {
               "cmd": "font",
-              "desc": "Change Font Size",
+              "label": "Change Font Size",
               "icon": "🔠",
               "long_desc": "Adjust text size for better readability"
             }
@@ -62,17 +62,17 @@
           "items": [
             {
               "cmd": "en",
-              "desc": "English",
+              "label": "English",
               "long_desc": "Set interface language to English"
             },
             {
               "cmd": "es",
-              "desc": "Español",
+              "label": "Español",
               "long_desc": "Cambiar idioma de interfaz al español"
             },
             {
               "cmd": "fr",
-              "desc": "Français",
+              "label": "Français",
               "long_desc": "Définir la langue de l'interface au français"
             }
           ]
@@ -81,31 +81,31 @@
     },
     {
       "cmd": "confirm",
-      "desc": "Confirm Demo",
+      "label": "Confirm Demo",
       "icon": "✅",
       "long_desc": "Test the yes/no selection with arrow keys"
     },
     {
       "cmd": "multi",
-      "desc": "Multi-Select Demo",
+      "label": "Multi-Select Demo",
       "icon": "☑️",
       "long_desc": "Test multi-select with checkboxes"
     },
     {
       "cmd": "form_interactive",
-      "desc": "Form Interactive Mode",
+      "label": "Form Interactive Mode",
       "icon": "📝",
       "long_desc": "Form with immediate field processing (interactive mode)"
     },
     {
       "cmd": "form_submit",
-      "desc": "Form Submit Mode",
+      "label": "Form Submit Mode",
       "icon": "📤",
       "long_desc": "Form with automatic submission (submit mode)"
     },
     {
       "cmd": "form_validation",
-      "desc": "Form with Pre-Validation",
+      "label": "Form with Pre-Validation",
       "icon": "🔄",
       "long_desc": "Form with built-in field validation rules"
     }
