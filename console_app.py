@@ -17,8 +17,8 @@ class ConsoleApp:
     def setup_menu(self) -> None:
         """Setup and register all menu items.
         
-        Menu configuration is loaded from menu_config.json.
-        This method simply collects decorated methods and passes them to register().
+        Menu configuration is loaded from menu_config.json in hierarchical structure.
+        This method collects decorated methods and passes them to register().
         """
         main_menu = self.main_menu
         
@@ -31,20 +31,11 @@ class ConsoleApp:
         # Load menu configuration from JSON file in this directory
         config_path = os.path.join(os.path.dirname(__file__), 'menu_config.json')
         
-        # Pass allowed_groups for validation (groups from JSON)
-        main_menu.register(*decorated_methods, allowed_groups=self.MENU_GROUP, config_path=config_path)
+        # register() will load hierarchical menu structure from JSON and follow that order
+        main_menu.register(*decorated_methods, config_path=config_path)
 
     def run(self) -> None:
         self.main_menu.display()
-
-    # Group configuration for visual customization and ordering
-    # Only groups defined here will be displayed
-    MENU_GROUP = {
-        "Tools":                  {"icon": "🛠️", "name": "Tools", "order": 1, "long_desc": "Collection of utility tools"},
-        "nLevel":                 {"icon": "📁", "name": "N-Level Menu Demo", "order": 2, "long_desc": "Demonstrate nested menu capabilities"},
-        "nLevel.Display":         {"icon": "📺", "name": "Display Options", "order": 1, "long_desc": "Customize visual display settings"},
-        "nLevel.Language":        {"icon": "🌐", "name": "Language", "order": 2, "long_desc": "Select interface language"}
-    }
 
     # Menu item action methods
     @MenuItemCmd("greeting")
