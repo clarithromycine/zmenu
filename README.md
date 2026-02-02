@@ -38,29 +38,47 @@ Perfect for CLI tools, system utilities, admin dashboards, and interactive appli
 - **Callable actions** - Execute any Python function when a menu item is selected
 - **Automatic "Back" option** - Seamless navigation to parent menus
 
-## 📝 Form System (NEW - v2.0)
+## 📝 Form System (v2.1 - Unified Handler Pattern)
 
-**Dual-mode form system** with three powerful approaches:
+**Flexible form system with before/after field processing:**
 
-### Interactive Mode 🔄
-- Process each field with immediate callbacks
-- Real-time validation and data transformation
-- Perfect for complex workflows and database operations
-- Handler pattern: `on_field_<field_id>(value, field)`
+### Unified Handler Pattern
 
-### Pre-Validation Mode 🔄 (NEW!)
-- Check for existing values before prompting user input
-- Suggest default values based on previously stored data
-- Allow users to confirm or override existing values
-- Handler pattern: `pre_validate_<field_id>(field, current_results)`
+Single, consistent interface for all field processing:
 
-### Submit Mode 📤
-- Batch collection and unified submission
-- Automatic API endpoint integration
-- Perfect for REST APIs and simple submissions
-- Clean, atomic validation
+```python
+class FormHandler:
+    # Called BEFORE user input - can suggest pre-validated values
+    def before_input_<field_id>(self, field, current_results):
+        """Return suggested value or None"""
+        return existing_value  # or None
+    
+    # Called AFTER user input - for immediate processing
+    def after_input_<field_id>(self, value, field, current_results):
+        """Process or validate the input"""
+        if valid:
+            print(f"✓ Value processed: {value}")
+        else:
+            print(f"❌ Invalid: {value}")
+```
 
-**See:** [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md) - Keyboard controls and interaction guide
+### Three Operating Modes
+
+| Mode | Purpose | Handler Usage |
+|------|---------|---------------|
+| **interactive** | Real-time field processing | Uses `after_input_*` callbacks for immediate processing |
+| **submit** | Batch collection | Collects all fields, no callbacks during input |
+| **pre-validation** | Suggest existing values | Uses `before_input_*` to show existing data, `after_input_*` for processing |
+
+### Features
+
+- **before_input_\*** - Suggest values before user input (pre-validation)
+- **after_input_\*** - Process values immediately after input (interactive)
+- **Backward compatible** - Legacy `on_field_*` and `pre_validate_*` still work
+- **Flexible** - Mix and match handlers as needed
+- **Type-aware** - Handles text, single-choice, and multi-choice fields
+
+**See:** [Form Examples](#-form-examples) section below for usage patterns
 
 ## 📁 Project Structure
 
@@ -451,51 +469,79 @@ class FormPreValidationHandler:
 
 ## � Form Examples
 
-### Example 1: Interactive Mode with Callbacks
+### Example 1: Processing After User Input (Interactive Mode)
 
 ```python
 from form_system import FormSystem
 
-# Create handler with field callbacks
+# Handler with after_input_* methods - process each field immediately
 class MyFormHandler:
-    def on_field_name(self, value, field):
-        print(f"✓ Name processed: {value}")
+    def after_input_name(self, value, field, results):
+        """Process name field after user input"""
+        if value and len(value) < 2:
+            print(f"⚠️  Warning: Name is very short")
+        else:
+            print(f"✓ Name processed: {value}")
     
-    def on_field_email(self, value, field):
-        print(f"✓ Email validated: {value}")
+    def after_input_email(self, value, field, results):
+        """Validate email after user input"""
+        if '@' in value:
+            print(f"✓ Email validated: {value}")
+        else:
+            print(f"❌ Invalid email format")
 
 # Initialize and process
 form = FormSystem(mode='interactive', handler=MyFormHandler())
 results = form.process_form(form_definition)
 ```
 
-### Example 2: Submit Mode with API Endpoint
+### Example 2: Suggesting Values Before Input (Pre-Validation)
 
 ```python
-# Batch collection with automatic submission
+# Handler with before_input_* methods - suggest existing values
+class MyPreValidator:
+    def before_input_email(self, field, current_results):
+        """Suggest existing email before input"""
+        existing_email = load_user_email()
+        if existing_email:
+            return existing_email  # Will ask user to confirm or override
+        return None  # No suggestion
+
+# Combined handler for full workflow
+class CombinedHandler(MyFormHandler, MyPreValidator):
+    pass
+
+form = FormSystem(mode='interactive', handler=CombinedHandler())
+results = form.process_form(form_definition)
+```
+
+### Example 3: Batch Collection (Submit Mode)
+
+```python
+# No callbacks during input - collect all fields first
 form = FormSystem(
     mode='submit',
     endpoint='https://api.example.com/submit'
 )
 results = form.process_form(form_definition)
-# Results automatically submitted to endpoint
+# Results automatically submitted to endpoint when complete
 ```
 
-### Example 3: Pre-Validation with Existing Data
+### Example 4: Accessing Current Results in Handlers
 
 ```python
-# Suggest existing values to users
-class PreValidator:
-    def pre_validate_email(self, field, current_results):
-        # Return existing email if available
-        return "user@example.com"
-
-form = FormSystem(
-    mode='interactive',
-    handler=MyFormHandler(),
-    pre_validation_handler=PreValidator()
-)
-results = form.process_form(form_definition)
+class SmartHandler:
+    def after_input_country(self, value, field, results):
+        """Use previously collected fields to validate country"""
+        name = results.get('name')  # Access earlier field
+        print(f"✓ {name} is from {value}")
+    
+    def before_input_subscription(self, field, results):
+        """Suggest subscription based on country"""
+        country = results.get('country')
+        if country in ['us', 'ca']:
+            return 'premium'  # Suggest premium for these countries
+        return 'basic'
 ```
 
 ## 📋 Form Menu Items in Demo
@@ -504,11 +550,21 @@ The example application includes three form demos:
 
 | Menu Item | Mode | Features |
 |-----------|------|----------|
-| **Form Interactive Mode** | Interactive | Immediate field callbacks, real-time processing |
-| **Form Submit Mode** | Submit | Batch collection, automatic file save |
-| **Form with Pre-Validation** | Interactive + Pre-validation | Suggest existing values, user confirmation |
+| **Form Interactive Mode** | Interactive | Immediate field processing with `after_input_*` |
+| **Form Submit Mode** | Submit | Batch collection without callbacks |
+| **Form with Pre-Validation** | Interactive + Pre-validation | Suggest values with `before_input_*`, process with `after_input_*` |
 
 All form examples use the same `form_example.json` file but demonstrate different processing strategies.
+
+### Handler Method Naming Convention
+
+**New (Recommended) Pattern:**
+- `before_input_<field_id>(field, current_results)` - Called before user input
+- `after_input_<field_id>(value, field, current_results)` - Called after user input
+
+**Legacy Pattern (Still Supported):**
+- `on_field_<field_id>(value, field)` - Equivalent to `after_input_*`
+- `pre_validate_<field_id>(field, current_results)` - Equivalent to `before_input_*`
 
 
 
