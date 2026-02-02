@@ -201,26 +201,26 @@ class FormSystem:
         # We need to move up from the bottom of the options list
         total_options = len(options)
         
-        # Move cursor up to the old selected option (from the bottom of the options list)
-        # First move up from current position to end of options list, then to old selection
+        # Move cursor up to the old selected option (from current position)
+        # The current position is at the bottom of the options list
         sys.stdout.write(f'\033[{total_options - old_idx}A')  # Move up to old selection
         
         # Clear and redraw the previously selected option (de-highlight)
         sys.stdout.write('\033[2K')  # Clear entire line
-        sys.stdout.write(f"\r    {options[old_idx]['label']}\n")  # De-highlighted option
+        sys.stdout.write(f"\r    {options[old_idx]['label']}")  # De-highlighted option (without \n)
         
         # Move to the new selected option
         diff = new_idx - old_idx
         if diff > 0:
-            # Moving down
+            # Moving down to new selection
             sys.stdout.write(f'\033[{diff}B')  # Move down to new selection
         elif diff < 0:
-            # Moving up
+            # Moving up to new selection
             sys.stdout.write(f'\033[{abs(diff)}A')  # Move up to new selection
         
         # Clear and redraw the newly selected option (highlight)
         sys.stdout.write('\033[2K')  # Clear entire line
-        sys.stdout.write(f"\r  ● {options[new_idx]['label']}\n")  # Highlighted option
+        sys.stdout.write(f"\r  ● {options[new_idx]['label']}")  # Highlighted option (without \n)
         
         # Now move cursor back to the bottom of the options list for next input
         remaining_lines = total_options - new_idx - 1
@@ -249,7 +249,7 @@ class FormSystem:
         # Clear and redraw the previously highlighted option (de-highlight)
         checkbox = "☑️" if current_idx in selected_indices else "☐"
         sys.stdout.write('\033[2K')  # Clear entire line
-        sys.stdout.write(f"\r    {checkbox} {options[current_idx]['label']}\n")  # Normal option (not highlighted)
+        sys.stdout.write(f"\r    {checkbox} {options[current_idx]['label']}")  # Normal option (not highlighted) (without \n)
         
         # Move to the new highlighted option
         diff = new_idx - current_idx
@@ -263,7 +263,7 @@ class FormSystem:
         # Clear and redraw the newly highlighted option
         checkbox = "☑️" if new_idx in selected_indices else "☐"
         sys.stdout.write('\033[2K')  # Clear entire line
-        sys.stdout.write(f"\r  ► {checkbox} {options[new_idx]['label']}\n")  # Highlighted option
+        sys.stdout.write(f"\r  ► {checkbox} {options[new_idx]['label']}")  # Highlighted option (without \n)
         
         # Move to the selection count line (which should be at the end)
         remaining_lines = total_options - new_idx - 1
@@ -273,7 +273,7 @@ class FormSystem:
         
         # Clear and update the selection count line
         sys.stdout.write('\033[2K')  # Clear entire line
-        sys.stdout.write(f"\r  已选择: {selected_count} 项\n")
+        sys.stdout.write(f"\r  已选择: {selected_count} 项")  # Without \n
         
         sys.stdout.flush()
     
@@ -299,7 +299,7 @@ class FormSystem:
         # Clear and redraw the option with updated checkbox (it remains highlighted since it's the current selection)
         checkbox = "☑️" if current_idx in selected_indices else "☐"
         sys.stdout.write('\033[2K')  # Clear entire line
-        sys.stdout.write(f"\r  ► {checkbox} {options[current_idx]['label']}\n")  # Updated option (still highlighted)
+        sys.stdout.write(f"\r  ► {checkbox} {options[current_idx]['label']}")  # Updated option (still highlighted) (without \n)
         
         # Move back to the selection count line
         remaining_lines = total_options - current_idx - 1
@@ -309,7 +309,7 @@ class FormSystem:
         
         # Clear and update the selection count line
         sys.stdout.write('\033[2K')  # Clear entire line
-        sys.stdout.write(f"\r  已选择: {selected_count} 项\n")
+        sys.stdout.write(f"\r  已选择: {selected_count} 项")  # Without \n
         
         # Move back to end for next input
         sys.stdout.flush()
