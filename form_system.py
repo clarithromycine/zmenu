@@ -240,12 +240,16 @@ class FormSystem:
                 print(f"    (Use ↑↓ arrow keys to navigate, ENTER to confirm)")
                 
                 show_options = True  # Flag to show options
+
+                ansi = get_ansi_scheme()
+
                 while True:
                     # Determine whether to show options based on flag
                     if show_options:                        
                         # Display options
                         print()
                         for i, option in enumerate(field.options):
+                            sys.stdout.write(ansi.get_screen('clear_line'))  # Clear entire line
                             if i == selected_idx:
                                 # Highlight selected option
                                 print(f"  ● {option['label']}")
@@ -277,14 +281,12 @@ class FormSystem:
                         show_options = True  # Need to redisplay options
                     elif key == 'enter':
                         selected_value = field.options[selected_idx]['value']
-                        selected_label = field.options[selected_idx]['label']
-                        # Clear all lines for this field and show the result                        
+                        selected_label = field.options[selected_idx]['label']                        
                         self._clear_lines(lines_printed)                        
                         print(f"[{field_num}/{total_fields}] {field.label}: {selected_label}")
                         return selected_value
                     elif key == 'esc':
-                        print("⊘ Cancelled")
-                        # Clear all lines for this field                        
+                        print("⊘ Cancelled")                                         
                         self._clear_lines(lines_printed)  
                         return None
                     # For invalid keys (like 'space', 'unknown', etc), show_options remains False
@@ -338,6 +340,7 @@ class FormSystem:
                 print(f"    (Use ↑↓ arrow keys to navigate, SPACE to toggle, ENTER to confirm)")
                 
                 show_options = True  # Flag to show options
+                ansi = get_ansi_scheme()
                 while True:
                     # Determine whether to show options based on flag
                     if show_options:
@@ -345,6 +348,7 @@ class FormSystem:
                         print()
                         for i, option in enumerate(field.options):
                             checkbox = "[•]" if i in selected_indices else "[ ]"
+                            sys.stdout.write(ansi.get_screen('clear_line'))  # Clear entire line
                             if i == current_idx:
                                 # Highlight current option
                                 print(f"  ► {checkbox} {option['label']}")
@@ -364,14 +368,11 @@ class FormSystem:
                     ansi = get_ansi_scheme()
                     
                     if key == 'up':
-                        current_idx = (current_idx - 1) % len(field.options)
-                        # Clear previous output and redisplay
-                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))
-                        #self._clear_lines(len(field.options) + 3)
+                        current_idx = (current_idx - 1) % len(field.options)                        
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))                        
                         show_options = True  # Need to redisplay options
                     elif key == 'down':
-                        current_idx = (current_idx + 1) % len(field.options)
-                        # Clear previous output and redisplay
+                        current_idx = (current_idx + 1) % len(field.options)                        
                         sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))
                         show_options = True  # Need to redisplay options
                     elif key == 'left' or key == 'right':
@@ -379,8 +380,7 @@ class FormSystem:
                         if key == 'left':
                             current_idx = (current_idx - 1) % len(field.options)
                         else:  # key == 'right'
-                            current_idx = (current_idx + 1) % len(field.options)
-                        # Clear previous output and redisplay
+                            current_idx = (current_idx + 1) % len(field.options)                        
                         sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))
                         show_options = True  # Need to redisplay options
                     elif key == 'space':
@@ -388,17 +388,14 @@ class FormSystem:
                         if current_idx in selected_indices:
                             selected_indices.remove(current_idx)
                         else:
-                            selected_indices.add(current_idx)
-                        # Clear previous output and redisplay
+                            selected_indices.add(current_idx)                        
                         sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))
                         show_options = True  # Need to redisplay options
                     elif key == 'enter':
                         selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                         selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
-                        
-                        # Clear all lines for this field and show the result                        
-                        self._clear_lines(lines_printed)
-                        
+                                                
+                        self._clear_lines(lines_printed)                        
                         # Print the completed field in the desired format
                         if selected_values:
                             result_str = ', '.join(selected_labels)
