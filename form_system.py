@@ -187,6 +187,133 @@ class FormSystem:
         sys.stdout.write('\033[?25h')
         sys.stdout.flush()
     
+    def _redraw_option_in_place(self, options: List[Dict], old_idx: int, new_idx: int) -> None:
+        """Redraw only the changed option lines to avoid flickering.
+        
+        Args:
+            options: List of option dictionaries
+            old_idx: Previous selected index (to de-highlight)
+            new_idx: New selected index (to highlight)
+        """
+        import sys
+        
+        # Calculate how many lines we need to move up to reach the options list
+        # We need to move up from the bottom of the options list
+        total_options = len(options)
+        
+        # Move cursor up to the old selected option (from the bottom of the options list)
+        # First move up from current position to end of options list, then to old selection
+        sys.stdout.write(f'\033[{total_options - old_idx}A')  # Move up to old selection
+        
+        # Clear and redraw the previously selected option (de-highlight)
+        sys.stdout.write('\033[2K')  # Clear entire line
+        sys.stdout.write(f"\r    {options[old_idx]['label']}\n")  # De-highlighted option
+        
+        # Move to the new selected option
+        diff = new_idx - old_idx
+        if diff > 0:
+            # Moving down
+            sys.stdout.write(f'\033[{diff}B')  # Move down to new selection
+        elif diff < 0:
+            # Moving up
+            sys.stdout.write(f'\033[{abs(diff)}A')  # Move up to new selection
+        
+        # Clear and redraw the newly selected option (highlight)
+        sys.stdout.write('\033[2K')  # Clear entire line
+        sys.stdout.write(f"\r  ● {options[new_idx]['label']}\n")  # Highlighted option
+        
+        # Now move cursor back to the bottom of the options list for next input
+        remaining_lines = total_options - new_idx - 1
+        if remaining_lines > 0:
+            sys.stdout.write(f'\033[{remaining_lines}B')  # Move back to bottom
+        
+        sys.stdout.flush()
+    
+    def _redraw_multi_option_in_place(self, options: List[Dict], selected_indices: set, current_idx: int, new_idx: int, selected_count: int) -> None:
+        """Redraw only the changed multi-option lines to avoid flickering.
+        
+        Args:
+            options: List of option dictionaries
+            selected_indices: Set of currently selected indices
+            current_idx: Previous selected index (to de-highlight)
+            new_idx: New selected index (to highlight)
+            selected_count: Current count of selected items
+        """
+        import sys
+        
+        total_options = len(options)
+        
+        # Move cursor up to the old highlighted option (from the bottom of the options list)
+        sys.stdout.write(f'\033[{total_options + 2 - current_idx}A')  # +2 for blank line and selection count line
+        
+        # Clear and redraw the previously highlighted option (de-highlight)
+        checkbox = "☑️" if current_idx in selected_indices else "☐"
+        sys.stdout.write('\033[2K')  # Clear entire line
+        sys.stdout.write(f"\r    {checkbox} {options[current_idx]['label']}\n")  # Normal option (not highlighted)
+        
+        # Move to the new highlighted option
+        diff = new_idx - current_idx
+        if diff > 0:
+            # Moving down
+            sys.stdout.write(f'\033[{diff}B')  # Move down to new selection
+        elif diff < 0:
+            # Moving up
+            sys.stdout.write(f'\033[{abs(diff)}A')  # Move up to new selection
+        
+        # Clear and redraw the newly highlighted option
+        checkbox = "☑️" if new_idx in selected_indices else "☐"
+        sys.stdout.write('\033[2K')  # Clear entire line
+        sys.stdout.write(f"\r  ► {checkbox} {options[new_idx]['label']}\n")  # Highlighted option
+        
+        # Move to the selection count line (which should be at the end)
+        remaining_lines = total_options - new_idx - 1
+        sys.stdout.write(f'\033[{remaining_lines}B')  # Move to after options
+        # Move down one more to the selection count line
+        sys.stdout.write('\033[1B')
+        
+        # Clear and update the selection count line
+        sys.stdout.write('\033[2K')  # Clear entire line
+        sys.stdout.write(f"\r  已选择: {selected_count} 项\n")
+        
+        sys.stdout.flush()
+    
+    def _redraw_multi_option_checkbox_in_place(self, options: List[Dict], selected_indices: set, current_idx: int, selected_count: int, total_options: int) -> None:
+        """Redraw only the changed checkbox to avoid flickering.
+        
+        Args:
+            options: List of option dictionaries
+            selected_indices: Set of currently selected indices
+            current_idx: Index of option whose checkbox changed
+            selected_count: Current count of selected items
+            total_options: Total number of options
+        """
+        import sys
+        
+        # Move cursor up to the option that changed (from the bottom of the options list)
+        sys.stdout.write(f'\033[{total_options + 2 - current_idx}A')  # +2 for blank line and selection count line
+        
+        # Move up to the specific option line
+        if current_idx > 0:
+            sys.stdout.write(f'\033[{current_idx}A')  # Move up to the option
+        
+        # Clear and redraw the option with updated checkbox (it remains highlighted since it's the current selection)
+        checkbox = "☑️" if current_idx in selected_indices else "☐"
+        sys.stdout.write('\033[2K')  # Clear entire line
+        sys.stdout.write(f"\r  ► {checkbox} {options[current_idx]['label']}\n")  # Updated option (still highlighted)
+        
+        # Move back to the selection count line
+        remaining_lines = total_options - current_idx - 1
+        sys.stdout.write(f'\033[{remaining_lines}B')  # Move to after options
+        # Move down one more to the selection count line
+        sys.stdout.write('\033[1B')
+        
+        # Clear and update the selection count line
+        sys.stdout.write('\033[2K')  # Clear entire line
+        sys.stdout.write(f"\r  已选择: {selected_count} 项\n")
+        
+        # Move back to end for next input
+        sys.stdout.flush()
+    
     def _get_single_choice(self, field: FormField, field_num: int, total_fields: int) -> Optional[str]:
         """Get single choice selection from user."""
         self._hide_cursor()
@@ -217,53 +344,50 @@ class FormSystem:
             
             selected_idx = 0
             
+            # Print all options initially
+            print()
+            for i, option in enumerate(field.options):
+                if i == selected_idx:
+                    # 高亮选中的选项
+                    print(f"  ● {option['label']}")
+                else:
+                    print(f"    {option['label']}")
+            
             try:
-                show_options = True  # 标记是否需要显示选项
                 while True:
-                    # 根据标记决定是否显示选项
-                    if show_options:
-                        print()
-                        for i, option in enumerate(field.options):
-                            if i == selected_idx:
-                                # 高亮选中的选项
-                                print(f"  ● {option['label']}")
-                            else:
-                                print(f"    {option['label']}")
-                    
-                    # 重置标记，等待按键处理决定是否需要重新显示
-                    show_options = False
-                    
                     # 获取用户输入
                     key = self._get_key()
                     
                     if key == 'up':
+                        prev_selected_idx = selected_idx
                         selected_idx = (selected_idx - 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        # 更新高亮显示，只重绘相关的两行（之前选中的和新选中的）
+                        self._redraw_option_in_place(field.options, prev_selected_idx, selected_idx)
                     elif key == 'down':
+                        prev_selected_idx = selected_idx
                         selected_idx = (selected_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        # 更新高亮显示，只重绘相关的两行（之前选中的和新选中的）
+                        self._redraw_option_in_place(field.options, prev_selected_idx, selected_idx)
                     elif key == 'left' or key == 'right':
                         # Treat left/right like up/down for single select
+                        prev_selected_idx = selected_idx
                         if key == 'left':
                             selected_idx = (selected_idx - 1) % len(field.options)
                         else:  # key == 'right'
                             selected_idx = (selected_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        # 更新高亮显示，只重绘相关的两行（之前选中的和新选中的）
+                        self._redraw_option_in_place(field.options, prev_selected_idx, selected_idx)
                     elif key == 'enter':
                         selected_value = field.options[selected_idx]['value']
+                        # Clear the options list and show selection
+                        import sys
+                        for _ in range(len(field.options)):
+                            sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                         print(f"✓ 已选择: {field.options[selected_idx]['label']}")
                         return selected_value
                     elif key == 'esc':
                         print("⊘ 已取消")
                         return None
-                    # 对于无效按键（包括 'space'、'unknown' 等），show_options 保持 False
-                    # 这样下次循环就不会重新显示选项
             except KeyboardInterrupt:
                 raise
         finally:
@@ -310,51 +434,45 @@ class FormSystem:
                     print(f"    {field.description}")
                 print(f"    (使用 ↑↓ 箭头键选择，ENTER 确认)")
                 
-                show_options = True  # 标记是否需要显示选项
+                # Print all options initially
+                print()
+                for i, option in enumerate(field.options):
+                    if i == selected_idx:
+                        # 高亮选中的选项
+                        print(f"  ● {option['label']}")
+                    else:
+                        print(f"    {option['label']}")
+                
                 while True:
-                    # 根据标记决定是否显示选项
-                    if show_options:
-                        # 显示选项
-                        print()
-                        for i, option in enumerate(field.options):
-                            if i == selected_idx:
-                                # 高亮选中的选项
-                                print(f"  ● {option['label']}")
-                            else:
-                                print(f"    {option['label']}")
-                    
-                    # 重置标记，等待按键处理决定是否需要重新显示
-                    show_options = False
-                    
                     # 获取用户输入
                     key = self._get_key()
                     
                     if key == 'up':
+                        prev_selected_idx = selected_idx
                         selected_idx = (selected_idx - 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        # Update highlignt display, only redraw the relevant lines
+                        self._redraw_option_in_place(field.options, prev_selected_idx, selected_idx)
                     elif key == 'down':
+                        prev_selected_idx = selected_idx
                         selected_idx = (selected_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        # Update highlignt display, only redraw the relevant lines
+                        self._redraw_option_in_place(field.options, prev_selected_idx, selected_idx)
                     elif key == 'left' or key == 'right':
                         # Treat left/right like up/down for single select
+                        prev_selected_idx = selected_idx
                         if key == 'left':
                             selected_idx = (selected_idx - 1) % len(field.options)
                         else:  # key == 'right'
                             selected_idx = (selected_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        # Update highlignt display, only redraw the relevant lines
+                        self._redraw_option_in_place(field.options, prev_selected_idx, selected_idx)
                     elif key == 'enter':
                         selected_value = field.options[selected_idx]['value']
                         selected_label = field.options[selected_idx]['label']
                         # Clear all lines for this field and show the result
                         import sys
-                        for _ in range(lines_printed):
-                            sys.stdout.write('\033[1A\033[2K')
+                        for _ in range(len(field.options)):
+                            sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                         print(f"[{field_num}/{total_fields}] {field.label}: {selected_label}")
                         return selected_value
                     elif key == 'esc':
@@ -364,8 +482,6 @@ class FormSystem:
                         for _ in range(lines_printed):
                             sys.stdout.write('\033[1A\033[2K')
                         return None
-                    # 对于无效按键（包括 'space'、'unknown' 等），show_options 保持 False
-                    # 这样下次循环就不会重新显示选项
             except KeyboardInterrupt:
                 raise
         finally:
@@ -402,62 +518,61 @@ class FormSystem:
             selected_indices = set()
             current_idx = 0
             
+            # Print all options initially
+            print()
+            for i, option in enumerate(field.options):
+                checkbox = "☑️" if i in selected_indices else "☐"
+                if i == current_idx:
+                    # 高亮当前选项
+                    print(f"  ► {checkbox} {option['label']}")
+                else:
+                    print(f"    {checkbox} {option['label']}")
+            
+            # Print initial selection count
+            selected_count = len(selected_indices)
+            print(f"\n  已选择: {selected_count} 项")
+            
             try:
-                show_options = True  # 标记是否需要显示选项
                 while True:
-                    # 根据标记决定是否显示选项
-                    if show_options:
-                        # 显示选项
-                        print()
-                        for i, option in enumerate(field.options):
-                            checkbox = "☑️" if i in selected_indices else "☐"
-                            if i == current_idx:
-                                # 高亮当前选项
-                                print(f"  ► {checkbox} {option['label']}")
-                            else:
-                                print(f"    {checkbox} {option['label']}")
-                        
-                        # 显示已选择数量
-                        selected_count = len(selected_indices)
-                        print(f"\n  已选择: {selected_count} 项")
-                    
-                    # 重置标记，等待按键处理决定是否需要重新显示
-                    show_options = False
-                    
                     # 获取用户输入
                     key = self._get_key()
                     
                     if key == 'up':
+                        prev_current_idx = current_idx
                         current_idx = (current_idx - 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        # Update the display for the moved selection
+                        self._redraw_multi_option_in_place(field.options, selected_indices, prev_current_idx, current_idx, selected_count)
                     elif key == 'down':
+                        prev_current_idx = current_idx
                         current_idx = (current_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        # Update the display for the moved selection
+                        self._redraw_multi_option_in_place(field.options, selected_indices, prev_current_idx, current_idx, selected_count)
                     elif key == 'left' or key == 'right':
                         # Treat left/right like up/down for multi-select navigation
+                        prev_current_idx = current_idx
                         if key == 'left':
                             current_idx = (current_idx - 1) % len(field.options)
                         else:  # key == 'right'
                             current_idx = (current_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        # Update the display for the moved selection
+                        self._redraw_multi_option_in_place(field.options, selected_indices, prev_current_idx, current_idx, selected_count)
                     elif key == 'space':
                         # 切换选择
                         if current_idx in selected_indices:
                             selected_indices.remove(current_idx)
+                            selected_count -= 1
                         else:
                             selected_indices.add(current_idx)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                            selected_count += 1
+                        # Update the display for the changed selection
+                        self._redraw_multi_option_checkbox_in_place(field.options, selected_indices, current_idx, selected_count, len(field.options))
                     elif key == 'enter':
                         selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                         selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
+                        # Clear the options list and selection count, then show final selection
+                        import sys
+                        for _ in range(len(field.options) + 2):  # options + blank line + selection count
+                            sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                         if selected_values:
                             print(f"\n✓ 已选择 {len(selected_values)} 项:")
                             for label in selected_labels:
@@ -468,8 +583,6 @@ class FormSystem:
                     elif key == 'esc':
                         print("⊘ 已取消")
                         return None
-                    # 对于无效按键（包括 'unknown' 等），show_options 保持 False
-                    # 这样下次循环就不会重新显示选项
             except KeyboardInterrupt:
                 raise
         finally:
@@ -517,67 +630,61 @@ class FormSystem:
                     print(f"    {field.description}")
                 print(f"    (使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)")
                 
-                show_options = True  # 标记是否需要显示选项
+                # Print all options initially
+                print()
+                for i, option in enumerate(field.options):
+                    checkbox = "☑️" if i in selected_indices else "☐"
+                    if i == current_idx:
+                        # 高亮当前选项
+                        print(f"  ► {checkbox} {option['label']}")
+                    else:
+                        print(f"    {checkbox} {option['label']}")
+                
+                # Print initial selection count
+                selected_count = len(selected_indices)
+                print(f"\n  已选择: {selected_count} 项")
+                
                 while True:
-                    # 根据标记决定是否显示选项
-                    if show_options:
-                        # 显示选项
-                        print()
-                        for i, option in enumerate(field.options):
-                            checkbox = "☑️" if i in selected_indices else "☐"
-                            if i == current_idx:
-                                # 高亮当前选项
-                                print(f"  ► {checkbox} {option['label']}")
-                            else:
-                                print(f"    {checkbox} {option['label']}")
-                        
-                        # 显示已选择数量
-                        selected_count = len(selected_indices)
-                        print(f"\n  已选择: {selected_count} 项")
-                    
-                    # 重置标记，等待按键处理决定是否需要重新显示
-                    show_options = False
-                    
                     # 获取用户输入
                     key = self._get_key()
                     
                     if key == 'up':
+                        prev_current_idx = current_idx
                         current_idx = (current_idx - 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        # Update the display for the moved selection
+                        self._redraw_multi_option_in_place(field.options, selected_indices, prev_current_idx, current_idx, selected_count)
                     elif key == 'down':
+                        prev_current_idx = current_idx
                         current_idx = (current_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        # Update the display for the moved selection
+                        self._redraw_multi_option_in_place(field.options, selected_indices, prev_current_idx, current_idx, selected_count)
                     elif key == 'left' or key == 'right':
                         # Treat left/right like up/down for multi-select navigation
+                        prev_current_idx = current_idx
                         if key == 'left':
                             current_idx = (current_idx - 1) % len(field.options)
                         else:  # key == 'right'
                             current_idx = (current_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        # Update the display for the moved selection
+                        self._redraw_multi_option_in_place(field.options, selected_indices, prev_current_idx, current_idx, selected_count)
                     elif key == 'space':
                         # 切换选择
                         if current_idx in selected_indices:
                             selected_indices.remove(current_idx)
+                            selected_count -= 1
                         else:
                             selected_indices.add(current_idx)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                            selected_count += 1
+                        # Update the display for the changed selection
+                        self._redraw_multi_option_checkbox_in_place(field.options, selected_indices, current_idx, selected_count, len(field.options))
                     elif key == 'enter':
                         selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                         selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
                         
                         # Clear all lines for this field and show the result
                         import sys
-                        for _ in range(lines_printed):
-                            sys.stdout.write('\033[1A\033[2K')
-                        
+                        for _ in range(len(field.options) + 2):  # options + blank line + selection count
+                            sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                         # Print the completed field in the desired format
                         if selected_values:
                             result_str = ', '.join(selected_labels)
@@ -593,8 +700,6 @@ class FormSystem:
                         for _ in range(lines_printed):
                             sys.stdout.write('\033[1A\033[2K')
                         return None
-                    # 对于无效按键（包括 'unknown' 等），show_options 保持 False
-                    # 这样下次循环就不会重新显示选项
             except KeyboardInterrupt:
                 raise
         finally:
