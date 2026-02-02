@@ -2,9 +2,9 @@
 Interactive Form System for Console
 Process form JSON and collect user input interactively.
 
-Supports two modes:
-- interactive: Process each field with immediate callback to handler
-- submit: Collect all fields and submit to endpoint as JSON
+Supports unified field handler pattern:
+- before_input_*: Called before prompting user, can suggest pre-validated values
+- after_input_*: Called after user input, for immediate field processing
 """
 import json
 import os
@@ -33,9 +33,14 @@ class FormSystem:
     """
     Interactive form system for console-based input collection.
     
-    Supports two modes:
-    - 'interactive': Process each field and immediately invoke callback on handler object
-    - 'submit': Collect all fields, validate, generate JSON and submit to endpoint
+    Unified handler pattern:
+    - before_input_<field_id>(field, current_results) -> Optional[value]
+      Called before prompting user; can return pre-validated value or None
+    - after_input_<field_id>(value, field, current_results) -> None
+      Called after user input collected; for immediate processing/validation
+    
+    Legacy mode parameter ('interactive', 'submit') is deprecated but still supported.
+    All modes now use unified handler pattern.
     """
     
     def __init__(self, mode: str = 'submit', handler: Optional[Any] = None, endpoint: Optional[str] = None, pre_validation_handler: Optional[Any] = None):
@@ -44,16 +49,23 @@ class FormSystem:
         
         Args:
             mode: 'interactive' or 'submit' (default: 'submit')
-            handler: Handler object with callback methods (required for interactive mode)
-            endpoint: API endpoint URL (optional for submit mode, can handle JSON generation only)
-            pre_validation_handler: Handler object with pre-validation methods (optional)
+            handler: Handler object with callback methods (before_input_* and/or after_input_*)
+            endpoint: API endpoint URL (optional for submit mode)
+            pre_validation_handler: DEPRECATED - use handler with before_input_* methods instead
         """
         self.mode = mode  # 'interactive' or 'submit'
         self.handler = handler
-        self.pre_validation_handler = pre_validation_handler
+        
+        # Support legacy pre_validation_handler for backward compatibility
+        if pre_validation_handler and not handler:
+            self.pre_validation_handler = pre_validation_handler
+        else:
+            self.pre_validation_handler = None
+            
         self.endpoint = endpoint
         self.menu = Menu(title="Form")
         self.results = {}
+
     
     def load_form(self, form_json: str) -> Dict[str, Any]:
         """Load form definition from JSON string."""
@@ -622,30 +634,42 @@ class FormSystem:
     
     def _check_pre_validation(self, field: FormField) -> Optional[Any]:
         """
-        Check if there's a pre-validation handler for this field.
+        Check if there's a before_input handler for this field.
+        Supports both new pattern (before_input_*) and legacy pattern (pre_validate_*).
         
         Args:
-            field: The field to check for pre-validation
+            field: The field to check for before_input
             
         Returns:
             Pre-validated value if available, None otherwise
         """
-        if not self.pre_validation_handler:
+        if not self.handler and not self.pre_validation_handler:
             return None
         
-        # Construct callback method name
-        callback_name = f'pre_validate_{field.id}'
+        # Try new pattern first: before_input_<field_id>
+        before_input_name = f'before_input_{field.id}'
         
-        if hasattr(self.pre_validation_handler, callback_name):
-            callback_method = getattr(self.pre_validation_handler, callback_name)
+        # Try with handler first
+        if self.handler and hasattr(self.handler, before_input_name):
+            callback_method = getattr(self.handler, before_input_name)
             try:
-                # Pass the current results so far to the pre-validation handler
                 return callback_method(field, self.results)
             except Exception as e:
-                print(f"❌ Error in pre-validation for field '{field.id}': {str(e)}")
+                print(f"❌ Error in before_input for field '{field.id}': {str(e)}")
                 return None
-        else:
-            return None
+        
+        # Fall back to legacy pre_validation_handler with pre_validate_* pattern
+        if self.pre_validation_handler:
+            pre_validate_name = f'pre_validate_{field.id}'
+            if hasattr(self.pre_validation_handler, pre_validate_name):
+                callback_method = getattr(self.pre_validation_handler, pre_validate_name)
+                try:
+                    return callback_method(field, self.results)
+                except Exception as e:
+                    print(f"❌ Error in pre_validation for field '{field.id}': {str(e)}")
+                    return None
+        
+        return None
     
     def _confirm_use_existing_value(self, value_display: str) -> bool:
         """
@@ -788,27 +812,42 @@ class FormSystem:
     
     def _invoke_field_handler(self, field_id: str, field_value: Any, field: FormField) -> None:
         """
-        Invoke handler callback for a field (interactive mode).
+        Invoke after_input handler callback for a field.
         
-        Expects handler to have a method: on_field_<field_id>(value, field)
-        For example: on_field_name(value, field) for field_id='name'
+        Supports both patterns:
+        - New: after_input_<field_id>(value, field, current_results)
+        - Legacy: on_field_<field_id>(value, field)
+        
+        Args:
+            field_id: The field ID
+            field_value: The collected value
+            field: The FormField object
         """
         if not self.handler:
             return
         
-        # Construct callback method name
-        callback_name = f'on_field_{field_id}'
+        # Try new pattern first: after_input_<field_id>
+        after_input_name = f'after_input_{field_id}'
         
-        if hasattr(self.handler, callback_name):
-            callback_method = getattr(self.handler, callback_name)
+        if hasattr(self.handler, after_input_name):
+            callback_method = getattr(self.handler, after_input_name)
+            try:
+                callback_method(field_value, field, self.results)
+                print(f"✓ Field '{field_id}' processed successfully")
+            except Exception as e:
+                print(f"❌ Error processing field '{field_id}': {str(e)}")
+            return
+        
+        # Fall back to legacy pattern: on_field_<field_id>
+        on_field_name = f'on_field_{field_id}'
+        
+        if hasattr(self.handler, on_field_name):
+            callback_method = getattr(self.handler, on_field_name)
             try:
                 callback_method(field_value, field)
                 print(f"✓ Field '{field_id}' processed successfully")
             except Exception as e:
                 print(f"❌ Error processing field '{field_id}': {str(e)}")
-        else:
-            # Optional: Log if callback method not found
-            pass
     
     def _submit_results(self, results: Dict[str, Any]) -> None:
         """

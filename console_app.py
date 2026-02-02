@@ -280,10 +280,19 @@ class ConsoleApp:
 
 
 class FormFieldHandler:
-    """Handler for form field callbacks in interactive mode."""
+    """Handler for form field callbacks using unified pattern.
     
-    def on_field_name(self, value, field):
-        """Callback when 'name' field is completed."""
+    Pattern:
+    - before_input_<field_id>(field, current_results) -> Optional[value]
+      Called before prompting user; can suggest pre-validated values
+    - after_input_<field_id>(value, field, current_results) -> None
+      Called after user input collected; for immediate processing
+    
+    Backward compatibility: on_field_* methods still work
+    """
+    
+    def after_input_name(self, value, field, results):
+        """Called after 'name' field is completed."""
         if value:
             print(f"  📌 Processing: Name validation...")
             if len(value) < 2:
@@ -293,8 +302,8 @@ class FormFieldHandler:
         else:
             print(f"  ⚠️  Name field skipped")
     
-    def on_field_email(self, value, field):
-        """Callback when 'email' field is completed."""
+    def after_input_email(self, value, field, results):
+        """Called after 'email' field is completed."""
         if value:
             print(f"  📌 Processing: Email validation...")
             if '@' in value:
@@ -304,41 +313,73 @@ class FormFieldHandler:
         else:
             print(f"  ⚠️  Email field skipped")
     
-    def on_field_country(self, value, field):
-        """Callback when 'country' field is completed."""
+    def after_input_country(self, value, field, results):
+        """Called after 'country' field is completed."""
         if value:
             print(f"  📌 Processing: Country selection...")
             print(f"  ✓ Selected region: {value}")
         else:
             print(f"  ⚠️  Country field skipped")
     
-    def on_field_interests(self, value, field):
-        """Callback when 'interests' field is completed."""
+    def after_input_interests(self, value, field, results):
+        """Called after 'interests' field is completed."""
         print(f"  📌 Processing: Interest selections...")
         if isinstance(value, list) and value:
             print(f"  ✓ Selected {len(value)} interests")
         else:
             print(f"  ⚠️  No interests selected")
     
-    def on_field_plan(self, value, field):
-        """Callback when 'plan' field is completed."""
+    def after_input_plan(self, value, field, results):
+        """Called after 'plan' field is completed."""
         if value:
             print(f"  📌 Processing: Subscription plan...")
             print(f"  ✓ Plan selected: {value}")
         else:
             print(f"  ⚠️  Plan field skipped")
     
-    def on_field_bio(self, value, field):
-        """Callback when 'bio' field is completed."""
+    def after_input_bio(self, value, field, results):
+        """Called after 'bio' field is completed."""
         if value:
             print(f"  📌 Processing: Bio content...")
             print(f"  ✓ Bio length: {len(value)} characters")
         else:
             print(f"  ⚠️  Bio field skipped")
+    
+    # Legacy methods (still work for backward compatibility)
+    def on_field_name(self, value, field):
+        """DEPRECATED: Use after_input_name instead."""
+        self.after_input_name(value, field, {})
+    
+    def on_field_email(self, value, field):
+        """DEPRECATED: Use after_input_email instead."""
+        self.after_input_email(value, field, {})
+    
+    def on_field_country(self, value, field):
+        """DEPRECATED: Use after_input_country instead."""
+        self.after_input_country(value, field, {})
+    
+    def on_field_interests(self, value, field):
+        """DEPRECATED: Use after_input_interests instead."""
+        self.after_input_interests(value, field, {})
+    
+    def on_field_plan(self, value, field):
+        """DEPRECATED: Use after_input_plan instead."""
+        self.after_input_plan(value, field, {})
+    
+    def on_field_bio(self, value, field):
+        """DEPRECATED: Use after_input_bio instead."""
+        self.after_input_bio(value, field, {})
 
 
 class FormPreValidationHandler:
-    """Handler for form pre-validation callbacks."""
+    """Handler for form before_input callbacks (formerly pre-validation).
+    
+    Pattern:
+    - before_input_<field_id>(field, current_results) -> Optional[value]
+      Called before prompting user; can suggest pre-validated values
+    
+    Backward compatibility: pre_validate_* methods still work
+    """
     
     def __init__(self):
         # Sample existing data for demonstration
@@ -350,37 +391,63 @@ class FormPreValidationHandler:
             "subscription": "pro"
         }
     
-    def pre_validate_name(self, field, current_results):
-        """Pre-validate name field."""
+    def before_input_name(self, field, current_results):
+        """Suggest value before 'name' field input."""
         if "name" in self.existing_data:
             return self.existing_data["name"]
         return None
     
-    def pre_validate_email(self, field, current_results):
-        """Pre-validate email field."""
+    def before_input_email(self, field, current_results):
+        """Suggest value before 'email' field input."""
         if "email" in self.existing_data:
             return self.existing_data["email"]
         return None
     
-    def pre_validate_country(self, field, current_results):
-        """Pre-validate country field."""
+    def before_input_country(self, field, current_results):
+        """Suggest value before 'country' field input."""
         if "country" in self.existing_data:
             return self.existing_data["country"]
         return None
     
-    def pre_validate_interests(self, field, current_results):
-        """Pre-validate interests field."""
+    def before_input_interests(self, field, current_results):
+        """Suggest value before 'interests' field input."""
         if "interests" in self.existing_data:
             return self.existing_data["interests"]
         return None
     
-    def pre_validate_subscription(self, field, current_results):
-        """Pre-validate subscription field."""
+    def before_input_subscription(self, field, current_results):
+        """Suggest value before 'subscription' field input."""
         if "subscription" in self.existing_data:
             return self.existing_data["subscription"]
         return None
     
-    def pre_validate_bio(self, field, current_results):
-        """Pre-validate bio field."""
+    def before_input_bio(self, field, current_results):
+        """Suggest value before 'bio' field input."""
         # Don't provide a default for bio since it's usually unique
         return None
+    
+    # Legacy methods (still work for backward compatibility)
+    def pre_validate_name(self, field, current_results):
+        """DEPRECATED: Use before_input_name instead."""
+        return self.before_input_name(field, current_results)
+    
+    def pre_validate_email(self, field, current_results):
+        """DEPRECATED: Use before_input_email instead."""
+        return self.before_input_email(field, current_results)
+    
+    def pre_validate_country(self, field, current_results):
+        """DEPRECATED: Use before_input_country instead."""
+        return self.before_input_country(field, current_results)
+    
+    def pre_validate_interests(self, field, current_results):
+        """DEPRECATED: Use before_input_interests instead."""
+        return self.before_input_interests(field, current_results)
+    
+    def pre_validate_subscription(self, field, current_results):
+        """DEPRECATED: Use before_input_subscription instead."""
+        return self.before_input_subscription(field, current_results)
+    
+    def pre_validate_bio(self, field, current_results):
+        """DEPRECATED: Use before_input_bio instead."""
+        return self.before_input_bio(field, current_results)
+
