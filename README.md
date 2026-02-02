@@ -1,10 +1,23 @@
-# ZMenu - Multi-Level Menu Console Application
+# ZMenu - Interactive Console Application Framework
 
-A flexible and reusable Python framework for building interactive console applications with nested menu support at unlimited depth levels. Features decorator-based menu item registration, cross-platform keyboard support, and automatic hierarchy management.
+A powerful and flexible Python framework for building interactive console applications with unlimited nested menu levels, decorator-based registration, and a revolutionary **dual-mode form system**.
 
-## 📋 Overview
+[![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
+[![Status](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](./CHANGELOG.md)
 
-ZMenu is a modern console application framework that simplifies the creation of complex, hierarchical menu-driven applications. It handles all the tedious work of menu navigation, input processing, and state management, allowing developers to focus on implementing their application logic.
+---
+
+## 🎯 Overview
+
+ZMenu simplifies building sophisticated console applications with:
+- **Unlimited menu nesting** - Organize complex hierarchies effortlessly
+- **Decorator-based menu items** - Clean, Pythonic syntax with `@MenuItemCmd`
+- **Interactive form system** - Two powerful modes for form processing
+- **Cross-platform support** - Windows and Unix/Linux/macOS compatibility
+- **Professional UI** - Beautiful, user-friendly console interface
+
+Perfect for CLI tools, system utilities, admin dashboards, and interactive applications.
 
 ## ✨ Features
 
@@ -24,13 +37,39 @@ ZMenu is a modern console application framework that simplifies the creation of 
 - **Callable actions** - Execute any Python function when a menu item is selected
 - **Automatic "Back" option** - Seamless navigation to parent menus
 
+## 📝 Form System (NEW - v2.0)
+
+**Dual-mode form system** with three powerful approaches:
+
+### Interactive Mode 🔄
+- Process each field with immediate callbacks
+- Real-time validation and data transformation
+- Perfect for complex workflows and database operations
+- Handler pattern: `on_field_<field_id>(value, field)`
+
+### Pre-Validation Mode 🔄 (NEW!)
+- Check for existing values before prompting user input
+- Suggest default values based on previously stored data
+- Allow users to confirm or override existing values
+- Handler pattern: `pre_validate_<field_id>(field, current_results)`
+
+### Submit Mode 📤
+- Batch collection and unified submission
+- Automatic API endpoint integration
+- Perfect for REST APIs and simple submissions
+- Clean, atomic validation
+
+**See:** [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md) - Keyboard controls and interaction guide
+
 ## 📁 Project Structure
 
 ```
 zmenu/
-├── menu_system.py          # Core framework - Menu, MenuItem, MenuItemCmd, ConsoleApp classes
-├── console_app.py          # Application logic - Menu item definitions and group configuration
+├── menu_system.py          # Core framework - Menu, MenuItem, MenuItemCmd classes
+├── form_system.py          # Form system - Interactive, Submit, and Pre-validation modes
+├── console_app.py          # Application logic - Menu item definitions and form handlers
 ├── main.py                 # Entry point - Application initialization and setup
+├── form_example.json       # Sample form definition for demos
 └── README.md               # This file
 ```
 
@@ -55,6 +94,32 @@ python main.py
 | **Enter** | Select the highlighted menu item |
 | **ESC** | Return to parent menu (or exit if at root) |
 | **Ctrl+C** | Force exit from any menu |
+
+## ⌨️ Keyboard Controls in Forms
+
+ZMenu provides intuitive keyboard controls for form interactions:
+
+### Choice Fields (Single/Multi Selection)
+
+| Control | Action |
+|---------|--------|
+| **↑ ↓ Arrow Keys** | Navigate between options |
+| **← → Arrow Keys** | Navigate between options (alternative to ↑ ↓) |
+| **Enter** | Confirm selection and proceed |
+| **ESC** | Cancel selection |
+| **Space** | Toggle selection (multi-choice only) |
+| **Other Keys** | Ignored (no interface refresh) |
+
+**Important:** Invalid keys (letters, numbers, etc.) are silently ignored and do not cause interface refresh, ensuring smooth user experience.
+
+### Text Input Fields
+
+| Control | Action |
+|---------|--------|
+| **Type normally** | Enter text as usual |
+| **Enter** | Submit text input |
+| **Backspace/Delete** | Edit text as standard |
+| **ESC** | Cancel input (when supported) |
 
 ## 🏗️ Architecture
 
@@ -82,20 +147,23 @@ python main.py
 ```
 Root Menu (main)
 ├── 👋 Say Hello (immediate action)
-├── 👤 Greet User (immediate action)
+├── ✅ Confirm Demo (interactive yes/no selection)
+├── ☑️ Multi-Select Demo (interactive multi-select with checkboxes)
 ├── 🧮 Tools (submenu - group="Tools")
-│   ├── 🧮 Calculator
-│   └── ℹ️ System Information
-├── 📺 Settings (submenu - group="Settings")
-│   ├── Display Options (submenu - group="Settings.Display")
-│   ├── Language (submenu - group="Settings.Language")
-│   │   ├── English
-│   │   ├── Español
-│   │   └── Français
-├── 📖 Help (submenu - group="Help")
-│   ├── About
-│   └── How to Use
-└── 🕐 Show Time (immediate action)
+│   ├── 🧮 Calculator (with arithmetic operations)
+│   ├── ℹ️ System Information (display system details)
+│   └── 🕐 Show Time (display current date and time)
+├── 📁 nLevel Menu (submenu - group="Settings")
+│   ├── 📺 Display Options (submenu - group="Settings.Display")
+│   │   ├── 🎨 Change Theme
+│   │   └── 🔠 Change Font Size
+│   └── 🌐 Language (submenu - group="Settings.Language")
+│       ├── English
+│       ├── Español
+│       └── Français
+├── 📝 Form Interactive Mode (form system in interactive mode)
+├── 📤 Form Submit Mode (form system in submit mode)
+└── 🔄 Form with Pre-Validation (form system with pre-validation)
 ```
 
 ## 📖 API Reference
@@ -179,7 +247,128 @@ menu.register(*decorated_functions)
 app.run()
 ```
 
-## 💻 Creating Your Own Application
+### `FormSystem` - Form System with Three Modes
+
+Initialize form system with flexible mode support:
+
+```python
+# Interactive mode - Process each field with callbacks
+form_system = FormSystem(
+    mode='interactive',
+    handler=field_handler,                 # Handler with on_field_* methods
+    pre_validation_handler=pre_validator   # Optional pre-validation
+)
+
+# Submit mode - Batch collection and submission
+form_system = FormSystem(
+    mode='submit',
+    endpoint='https://api.example.com/submit'  # Optional API endpoint
+)
+```
+
+### Interactive Mode Handler Pattern
+
+Create a handler with field callback methods:
+
+```python
+class FormFieldHandler:
+    def on_field_{field_id}(self, value, field):
+        """
+        Process field after user input.
+        
+        Args:
+            value: User-entered value
+            field: The FormField object with metadata
+        """
+        # Process, validate, or transform the value
+        print(f"Processing {field.label}: {value}")
+```
+
+### Pre-Validation Handler Pattern
+
+Create a handler to suggest existing values:
+
+```python
+class FormPreValidationHandler:
+    def pre_validate_{field_id}(self, field, current_results):
+        """
+        Suggest value before user input.
+        
+        Args:
+            field: The FormField object with metadata
+            current_results: Results collected so far
+            
+        Returns:
+            Pre-validated value or None
+        """
+        # Check database, cache, or previous values
+        if existing_value_available:
+            return existing_value
+        return None
+```
+
+## � Form Examples
+
+### Example 1: Interactive Mode with Callbacks
+
+```python
+from form_system import FormSystem
+
+# Create handler with field callbacks
+class MyFormHandler:
+    def on_field_name(self, value, field):
+        print(f"✓ Name processed: {value}")
+    
+    def on_field_email(self, value, field):
+        print(f"✓ Email validated: {value}")
+
+# Initialize and process
+form = FormSystem(mode='interactive', handler=MyFormHandler())
+results = form.process_form(form_definition)
+```
+
+### Example 2: Submit Mode with API Endpoint
+
+```python
+# Batch collection with automatic submission
+form = FormSystem(
+    mode='submit',
+    endpoint='https://api.example.com/submit'
+)
+results = form.process_form(form_definition)
+# Results automatically submitted to endpoint
+```
+
+### Example 3: Pre-Validation with Existing Data
+
+```python
+# Suggest existing values to users
+class PreValidator:
+    def pre_validate_email(self, field, current_results):
+        # Return existing email if available
+        return "user@example.com"
+
+form = FormSystem(
+    mode='interactive',
+    handler=MyFormHandler(),
+    pre_validation_handler=PreValidator()
+)
+results = form.process_form(form_definition)
+```
+
+## 📋 Form Menu Items in Demo
+
+The example application includes three form demos:
+
+| Menu Item | Mode | Features |
+|-----------|------|----------|
+| **Form Interactive Mode** | Interactive | Immediate field callbacks, real-time processing |
+| **Form Submit Mode** | Submit | Batch collection, automatic file save |
+| **Form with Pre-Validation** | Interactive + Pre-validation | Suggest existing values, user confirmation |
+
+All form examples use the same `form_example.json` file but demonstrate different processing strategies.
+
+
 
 ### Step 1: Define Actions with Decorators
 

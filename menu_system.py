@@ -123,9 +123,14 @@ class Menu:
         self._item_order.append(key)
         return submenu
     
-    def register(self, *functions: Callable) -> None:
-
-        # Collect functions with cmd attribute and build group_icon mapping
+    def register(self, *functions: Callable, allowed_groups: Dict = None) -> None:
+        """Register menu items from decorated functions.
+        
+        Args:
+            functions: Functions decorated with @MenuItemCmd
+            allowed_groups: Dictionary of allowed groups with their configuration
+        """
+        # Collect functions with cmd attribute
         items_to_register = []        
         
         for fn in functions:
@@ -133,17 +138,44 @@ class Menu:
                 group = getattr(fn, 'group', None)                
                 icon  = getattr(fn, 'icon', None)
                 long_desc = getattr(fn, 'long_desc', None)
-                items_to_register.append((fn.order, fn.cmd, fn.label, fn, group, icon, long_desc))
-                        
-        # Sort by order
-        items_to_register.sort(key=lambda x: x[0])
+                order = getattr(fn, 'order', 0)
+                
+                # Validate group if allowed_groups is provided
+                if group is not None:
+                    if allowed_groups and group not in allowed_groups:
+                        # Skip items with groups not in allowed_groups
+                        continue
+                
+                items_to_register.append((order, fn.cmd, fn.label, fn, group, icon, long_desc))
+        
+        # Sort items within their groups only (not global sorting)
+        # Group by group name
+        grouped_items = {}
+        root_items = []
+        
+        for item in items_to_register:
+            order, cmd, label, fn, group, icon, long_desc = item
+            if group is None:
+                root_items.append(item)
+            else:
+                if group not in grouped_items:
+                    grouped_items[group] = []
+                grouped_items[group].append(item)
+        
+        # Sort items within each group by order
+        for group in grouped_items:
+            grouped_items[group].sort(key=lambda x: x[0])
 
         # Track created submenus
         submenus = {}
         
-        # Register items, handling group parameter for nested menus
+        # Register root items first (unsorted, will be sorted later in setup_menu)
+        for order, cmd, label, fn, group, icon, long_desc in root_items:
+            self.add_item(cmd, label, fn, icon, long_desc)
+        
+        # Register grouped items
         for order, cmd, label, fn, group, icon, long_desc in items_to_register:
-            if group:
+            if group is not None:
                 # Split group path (e.g., "Tools.Advanced" -> ["Tools", "Advanced"])
                 group_path = group.split('.')
                 
@@ -162,9 +194,6 @@ class Menu:
                 
                 # Add item to the final submenu
                 current_menu.add_item(cmd, label, fn, icon, long_desc)
-            else:
-                # Add item to root menu                
-                self.add_item(cmd, label, fn, icon, long_desc)
     
     def _redraw_menu_in_place(self, selected_idx: int = 0) -> None:
         """Redraw only the menu items in place.
