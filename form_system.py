@@ -7,8 +7,29 @@ Supports two modes:
 - submit: Collect all fields and submit to endpoint as JSON
 """
 import json
+import os
+import sys
 from typing import Any, Dict, List, Optional, Callable
 from menu_system import Menu
+
+try:    
+    import fcntl
+    HAS_FCNTL = True
+except ImportError:
+    HAS_FCNTL = False
+
+try:
+    import msvcrt
+    HAS_MSVCRT = True
+except ImportError:
+    HAS_MSVCRT = False
+
+try:
+    import termios
+    import tty
+    HAS_TERMIOS = True
+except ImportError:
+    HAS_TERMIOS = False
 
 
 class FormField:
@@ -223,6 +244,7 @@ class FormSystem:
                     # 根据标记决定是否显示选项
                     if show_options:
                         print()
+                        
                         for i, option in enumerate(field.options):
                             if i == selected_idx:
                                 # 高亮选中的选项
@@ -295,6 +317,7 @@ class FormSystem:
             
             selected_idx = 0
             
+            
             # Track the number of lines printed for this field
             lines_printed = 2  # Start with the blank line and field header line: "\n[1/6] Field Name"
             if field.description:
@@ -313,7 +336,7 @@ class FormSystem:
                 show_options = True  # 标记是否需要显示选项
                 while True:
                     # 根据标记决定是否显示选项
-                    if show_options:
+                    if show_options:                        
                         # 显示选项
                         print()
                         for i, option in enumerate(field.options):
@@ -601,64 +624,102 @@ class FormSystem:
             self._show_cursor()
     
     def _get_key(self) -> str:
-        """Get key input from user (Windows/Unix compatible)."""
-        import sys
+        """Get key input from user (Windows/Unix compatible).
         
-        if sys.platform == 'win32':
-            import msvcrt
-            key = msvcrt.getch()
+        Uses same key handling logic as menu_system for consistency.
+        Returns: 'up', 'down', 'left', 'right', 'enter', 'space', 'esc', 'char:{ch}', 'unknown'
+        """
+        # Windows arrow-key handling via msvcrt
+        if HAS_MSVCRT and os.name == 'nt':
+            ch = msvcrt.getch()
             
-            if key == b'\x03':  # Ctrl+C
+            if ch == b'\x03':  # Ctrl+C
                 raise KeyboardInterrupt()
-            elif key == b'\x00' or key == b'\xe0':  # Special keys
-                key = msvcrt.getch()
-                if key == b'H':  # Up arrow
+            
+            if ch == b'\xe0':  # Extended key (arrow keys, etc.)
+                ch2 = msvcrt.getch()
+                if ch2 == b'H':  # Up arrow
                     return 'up'
-                elif key == b'P':  # Down arrow
+                elif ch2 == b'P':  # Down arrow
                     return 'down'
-                elif key == b'K':  # Left arrow
+                elif ch2 == b'K':  # Left arrow
                     return 'left'
-                elif key == b'M':  # Right arrow
+                elif ch2 == b'M':  # Right arrow
                     return 'right'
                 return 'unknown'
-            elif key == b'\r':  # Enter
+            elif ch == b'\r':  # Enter
                 return 'enter'
-            elif key == b' ':  # Space
+            elif ch == b' ':  # Space
                 return 'space'
-            elif key == b'\x1b':  # Escape
+            elif ch == b'\x1b':  # Escape
                 return 'esc'
             else:
-                return 'unknown'
-        else:
-            import termios
-            import tty
+                return f'char:{ch.decode(errors="ignore")}'
+        
+        # POSIX raw terminal handling
+        elif HAS_TERMIOS and sys.stdin.isatty():
             fd = sys.stdin.fileno()
             old_settings = termios.tcgetattr(fd)
+            old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             try:
                 tty.setraw(fd)
-                key = sys.stdin.read(1)
+                # First character - read immediately
+                ch = sys.stdin.read(1)
                 
-                if key == '\x03':  # Ctrl+C
+                if ch == '\x03':  # Ctrl+C
                     raise KeyboardInterrupt()
-                elif key == '\x1b':  # Escape sequence
-                    next_chars = sys.stdin.read(2)
-                    if next_chars == '[A':
-                        return 'up'
-                    elif next_chars == '[B':
-                        return 'down'
-                    elif next_chars == '[C':
-                        return 'right'
-                    elif next_chars == '[D':
-                        return 'left'
+                
+                if ch == '\x1b':  # Escape sequence - try to read more without blocking
+                    # Temporarily set non-blocking mode
+                    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
+                    try:
+                        next1 = sys.stdin.read(1)
+                    except BlockingIOError:
+                        next1 = ''
+                    finally:
+                        fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore blocking mode
+                    
+                    if not next1:
+                        # No follow-up char = bare ESC press
+                        return 'esc'
+                    
+                    if next1 == '[':
+                        # Try to read arrow key indicator
+                        fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
+                        try:
+                            next2 = sys.stdin.read(1)
+                        except BlockingIOError:
+                            next2 = ''
+                        finally:
+                            fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)
+                        
+                        if next2 == 'A':
+                            return 'up'
+                        if next2 == 'B':
+                            return 'down'
+                        if next2 == 'C':
+                            return 'right'
+                        if next2 == 'D':
+                            return 'left'
+                    
+                    # Not an arrow key, just ESC
                     return 'esc'
-                elif key == '\r' or key == '\n':
+                
+                if ch in ('\r', '\n'):
                     return 'enter'
-                elif key == ' ':
+                if ch == ' ':
                     return 'space'
-                else:
-                    return 'unknown'
+                return f'char:{ch}'
             finally:
+                fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore original flags
                 termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        
+        else:
+            # Fallback: use input() for generic systems
+            inp = input().strip()
+            if inp == '':
+                return 'unknown'
+            return f'char:{inp[0]}'
     
     def _clear_lines(self, num_lines: int) -> None:
         """Clear previous lines from console."""

@@ -344,13 +344,18 @@ class Menu:
         # Redraw all items
         for idx, item in enumerate(items):
             checkbox = "[•]" if item['selected'] else "[ ]"
-            highlight = ansi.get_theme_color('primary') if idx == selected_idx else ""
-            reset = ansi.get_reset() if idx == selected_idx else ""
+            highlight = ansi.get_theme_color('primary')            
+            reset = ansi.get_reset()
+
             label = item['label']
             
             sys.stdout.write(ansi.get_screen('clear_line'))  # Clear entire line
-            sys.stdout.write(f"\r{highlight}  {checkbox} {label}{reset}\n")
-        
+
+            if idx == selected_idx:
+                print(f"{highlight}  {checkbox} {label}{reset}")
+            else:
+                print(f"  {checkbox} {label}")
+                    
         # Move down to instruction line
         sys.stdout.write(ansi.get_cursor_move('down', num_items))
         sys.stdout.flush()
