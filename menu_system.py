@@ -251,10 +251,10 @@ class Menu:
             if idx - 1 == selected_idx:
                 desc_text = ""
                 if long_desc:
-                    secondary_code = ansi.get_color('secondary')
+                    secondary_code = ansi.get_theme_color('secondary')
                     reset_code = ansi.get_color('reset')
                     desc_text = f" {secondary_code}({long_desc}){reset_code}"
-                primary_code = ansi.get_color('primary')
+                primary_code = ansi.get_theme_color('primary')
                 reset_code = ansi.get_color('reset')
                 print(f"  {primary_code}➤ {idx}. {label}{desc_text} {reset_code}")
             else:
@@ -343,7 +343,7 @@ class Menu:
         # Redraw all items
         for idx, item in enumerate(items):
             checkbox = "[•]" if item['selected'] else "[ ]"
-            highlight = ansi.get_color('primary') if idx == selected_idx else ""
+            highlight = ansi.get_theme_color('primary') if idx == selected_idx else ""
             reset = ansi.get_color('reset') if idx == selected_idx else ""
             label = item['label']
             
@@ -376,7 +376,7 @@ class Menu:
             # Display items
             for idx, item in enumerate(items):
                 checkbox = "[•]" if item['selected'] else "[ ]"
-                highlight = ansi.get_color('primary') if idx == selected_idx else ""
+                highlight = ansi.get_theme_color('primary') if idx == selected_idx else ""
                 reset = ansi.get_color('reset') if idx == selected_idx else ""
                 label = item['label']
                 
@@ -450,8 +450,8 @@ class Menu:
             selected: 0 for YES, 1 for NO
         """
         ansi = get_ansi_scheme()
-        yes_text = f"{ansi.get_color('primary')}➤ YES{ansi.get_color('reset')}" if selected == 0 else "  YES"
-        no_text = f"{ansi.get_color('primary')}➤ NO{ansi.get_color('reset')}" if selected == 1 else "  NO"
+        yes_text = f"{ansi.get_theme_color('primary')}➤ YES{ansi.get_color('reset')}" if selected == 0 else "  YES"
+        no_text = f"{ansi.get_theme_color('primary')}➤ NO{ansi.get_color('reset')}" if selected == 1 else "  NO"
         # Move cursor up 3 lines to YES/NO line, clear it, and reprint
         sys.stdout.write(ansi.get_cursor_move('up', 3))  # Move up 3 lines
         sys.stdout.write(ansi.get_screen('clear_line'))  # Clear the line
@@ -488,8 +488,8 @@ class Menu:
             while True:
                 # Display yes/no (first time normally, then update in place)
                 if first_time:
-                    yes_text = f"{ansi.get_color('primary')}➤ YES{ansi.get_color('reset')}" if selected == 0 else "  YES"
-                    no_text = f"{ansi.get_color('primary')}➤ NO{ansi.get_color('reset')}" if selected == 1 else "  NO"
+                    yes_text = f"{ansi.get_theme_color('primary')}➤ YES{ansi.get_color('reset')}" if selected == 0 else "  YES"
+                    no_text = f"{ansi.get_theme_color('primary')}➤ NO{ansi.get_color('reset')}" if selected == 1 else "  NO"
                     print(f"  {yes_text} / {no_text}")
                     print("\n[Use Arrow Keys ← → to select, Enter to confirm]")
                     first_time = False

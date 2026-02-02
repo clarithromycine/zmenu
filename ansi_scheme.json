@@ -1,16 +1,20 @@
 {
+  "theme": {
+    "primary": "orange",
+    "secondary": "gray"
+  },
   "colors": {
-    "primary": {
+    "orange": {
       "code": "\u001b[38;5;208m",
       "name": "orange",
       "rgb": "rgb(255, 165, 0)",
-      "description": "Primary highlight color for selected items"
+      "description": "Orange color"
     },
-    "secondary": {
+    "gray": {
       "code": "\u001b[90m",
       "name": "gray",
       "rgb": "rgb(128, 128, 128)",
-      "description": "Secondary color for descriptions and hints"
+      "description": "Gray color"
     },
     "reset": {
       "code": "\u001b[0m",

@@ -51,9 +51,13 @@ class AnsiScheme:
     def _set_defaults(self) -> None:
         """Set default ANSI scheme configuration."""
         self.config = {
+            "theme": {
+                "primary": "orange",
+                "secondary": "gray"
+            },
             "colors": {
-                "primary": {"code": "\033[38;5;208m", "name": "orange"},
-                "secondary": {"code": "\033[90m", "name": "gray"},
+                "orange": {"code": "\033[38;5;208m", "name": "orange"},
+                "gray": {"code": "\033[90m", "name": "gray"},
                 "reset": {"code": "\033[0m", "name": "reset"}
             },
             "cursor": {
@@ -76,13 +80,27 @@ class AnsiScheme:
         """Get ANSI code for a color.
         
         Args:
-            color_name: Name of the color (e.g., 'primary', 'secondary', 'reset')
+            color_name: Name of the color (e.g., 'orange', 'red', 'green')
         
         Returns:
             ANSI escape code
         """
         if color_name in self.config.get('colors', {}):
             return self.config['colors'][color_name]['code']
+        return ""
+    
+    def get_theme_color(self, role: str) -> str:
+        """Get ANSI code for a theme color role.
+        
+        Args:
+            role: Theme role ('primary', 'secondary')
+        
+        Returns:
+            ANSI escape code
+        """
+        if role in self.config.get('theme', {}):
+            color_name = self.config['theme'][role]
+            return self.get_color(color_name)
         return ""
     
     def get_cursor(self, action: str) -> str:
