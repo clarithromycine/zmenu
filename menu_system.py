@@ -3,7 +3,7 @@ Multi-level Menu System for Console Applications
 A flexible and reusable menu framework supporting nested menus.
 """
 
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Any
 import os
 import sys
 import json
@@ -16,28 +16,49 @@ class MenuItemCmd:
     """Decorator for defining menu items with metadata.
     
     Menu configuration is loaded from menu_config.json.
-    Only cmd parameter is needed here.
+    Params and options are defined here for parameter collection.
+    
+    Attributes:
+        cmd: Command identifier
+        params: List of required parameters [{'name', 'type', 'description', 'validation_rule'}, ...]
+        options: List of optional parameters [{'name', 'type', 'description', 'default', ...}, ...]
     """
     
-    def __init__(self, cmd: str):
+    def __init__(self, cmd: str, params: Optional[List[Dict]] = None, options: Optional[List[Dict]] = None):
         self.cmd = cmd
+        self.params = params or []
+        self.options = options or []
     
     def __call__(self, fn: Callable) -> Callable:
         fn.cmd = self.cmd
-        # Other attributes will be loaded from menu_config.json in Menu.register()
+        fn.params = self.params
+        fn.options = self.options
         return fn
 
 class MenuItem:
     """Represents a single menu item."""    
-    def __init__(self, label: str, action: Optional[Callable] = None, long_desc: Optional[str] = None):
+    def __init__(self, label: str, action: Optional[Callable] = None, long_desc: Optional[str] = None, 
+                 params: Optional[List[Dict]] = None, options: Optional[List[Dict]] = None):
         self.label = label
         self.action = action
         self.long_desc = long_desc
+        self.params = params or []
+        self.options = options or []
     
-    def execute(self) -> bool:
+    def execute(self, collected_params: Optional[Dict[str, Any]] = None, 
+                collected_options: Optional[Dict[str, Any]] = None) -> bool:
         if self.action is None:
             return True
-        return self.action()
+        
+        # Default empty dicts if not provided
+        collected_params = collected_params or {}
+        collected_options = collected_options or {}
+        
+        try:
+            return self.action(collected_params, collected_options)
+        except Exception as e:
+            print(f"\n❌ Error executing action: {e}")
+            return False
 
 
 class Menu:
@@ -66,7 +87,8 @@ class Menu:
         """Clear the console screen."""
         os.system('cls' if os.name == 'nt' else 'clear')
     
-    def add_item(self, key: str, label: str, action: Callable, icon: Optional[str] = None, long_desc: Optional[str] = None) -> None:
+    def add_item(self, key: str, label: str, action: Callable, icon: Optional[str] = None, long_desc: Optional[str] = None,
+                 params: Optional[List[Dict]] = None, options: Optional[List[Dict]] = None) -> None:
         """
         Add a menu item with an associated action.
         
@@ -76,10 +98,12 @@ class Menu:
             action: Callable function to execute
             icon: Optional icon character
             long_desc: Optional long description text
+            params: List of required parameters
+            options: List of optional parameters
         """
         if icon:
             label = icon + " " + label
-        self.items[key] = MenuItem(label, action, long_desc)        
+        self.items[key] = MenuItem(label, action, long_desc, params, options)        
         self._item_order.append(key)
     
     def add_submenu(self, key: str, label: str, icon: Optional[str] = None, long_desc: Optional[str] = None) -> 'Menu':
@@ -159,7 +183,10 @@ class Menu:
                     fn = cmd_to_fn.get(cmd)
                     if fn:
                         item_label = label or cmd
-                        current_menu.add_item(cmd, item_label, fn, icon, desc)
+                        # Get params and options from the function if available
+                        params = getattr(fn, 'params', None)
+                        options = getattr(fn, 'options', None)
+                        current_menu.add_item(cmd, item_label, fn, icon, desc, params, options)
                 
                 elif label and subitems:  # This is a submenu
                     # Create submenu - pass icon in icon param, not in label
@@ -511,6 +538,147 @@ class Menu:
             input("Press Enter to continue...")
             return None
     
+    def _collect_parameters(self, params_config: List[Dict], options_config: List[Dict]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """Collect parameters and options from user using forms.
+        
+        Args:
+            params_config: List of required parameter definitions
+            options_config: List of optional parameter definitions
+        
+        Returns:
+            Tuple of (collected_params, collected_options)
+        """
+        from form_system import FormSystem
+        
+        form = FormSystem(mode='interactive')
+        
+        # Build form_data structure with all parameters and options
+        fields = []
+        
+        # Add required parameters
+        for param in params_config:
+            name = param.get('name', '')
+            param_type = param.get('type', 'text')
+            description = param.get('description', '')
+            validation_rule = param.get('validation_rule', 'required')
+            
+            field_data = {
+                'id': name,
+                'name': name,
+                'label': name,
+                'description': description,
+                'type': 'text',  # Default to text
+                'required': True,
+            }
+            
+            # Map param types to form field types
+            if param_type == 'number':
+                field_data['type'] = 'text'  # Will validate as number
+                field_data['description'] = f"{description} (number)"
+            elif param_type == 'choice':
+                field_data['type'] = 'single_choice'
+                # Convert choice strings to dicts with 'label' and 'value' fields for FormSystem
+                choices = param.get('choices', [])
+                field_data['options'] = [{'label': choice, 'value': choice} for choice in choices]
+            else:  # text
+                field_data['type'] = 'text'
+            
+            fields.append(field_data)
+        
+        # Add optional parameters
+        for option in options_config:
+            name = option.get('name', '')
+            option_type = option.get('type', 'text')
+            description = option.get('description', '')
+            default_value = option.get('default', '')
+            
+            field_data = {
+                'id': name,
+                'name': name,
+                'label': name,
+                'description': description,
+                'type': 'text',  # Default to text
+                'required': False,
+                'default': default_value,
+            }
+            
+            # Map option types to form field types
+            if option_type == 'bool':
+                field_data['type'] = 'confirm'
+                field_data['default'] = default_value in ['true', True, 'True', '1']
+            elif option_type == 'choice':
+                field_data['type'] = 'single_choice'
+                # Convert choice strings to dicts with 'label' and 'value' fields for FormSystem
+                choices = option.get('choices', [])
+                field_data['options'] = [{'label': choice, 'value': choice} for choice in choices]
+                if default_value:
+                    field_data['default'] = default_value
+            else:  # text
+                field_data['type'] = 'text'
+            
+            fields.append(field_data)
+        
+        # Create form_data structure
+        form_data = {
+            'title': 'Enter Parameters',
+            'description': 'Please fill in the required information',
+            'icon': '📝',
+            'fields': fields
+        }
+        
+        # Process the form
+        result = form.process_form(form_data)
+        
+        if result is None:
+            return None, None
+        
+        # Separate params and options
+        collected_params = {}
+        collected_options = {}
+        
+        params_names = set(p.get('name', '') for p in params_config)
+        
+        # Extract actual values from FormSystem's structured result
+        form_data_values = result.get('data', {})
+        
+        for key, field_info in form_data_values.items():
+            value = field_info.get('value')
+            if key in params_names:
+                collected_params[key] = value
+            else:
+                collected_options[key] = value
+        
+        return collected_params, collected_options
+    
+    def _create_validator(self, validation_rule: str) -> Callable:
+        """Create a validator function based on rule.
+        
+        Args:
+            validation_rule: Rule name like 'required', 'min_length:3', 'max_length:20', 'range:1-100'
+        
+        Returns:
+            Validator function
+        """
+        def validator(value: str) -> bool:
+            if validation_rule == 'required':
+                return len(value.strip()) > 0
+            elif validation_rule.startswith('min_length:'):
+                min_len = int(validation_rule.split(':')[1])
+                return len(value) >= min_len
+            elif validation_rule.startswith('max_length:'):
+                max_len = int(validation_rule.split(':')[1])
+                return len(value) <= max_len
+            elif validation_rule.startswith('range:'):
+                try:
+                    range_str = validation_rule.split(':')[1]
+                    min_val, max_val = map(int, range_str.split('-'))
+                    num_val = int(value)
+                    return min_val <= num_val <= max_val
+                except:
+                    return False
+            return True
+        return validator
+    
     def _execute_choice(self, key: str) -> bool:
         """
         Execute the selected menu item or submenu.
@@ -531,8 +699,20 @@ class Menu:
         
         # Execute regular menu item
         if key in self.items:
+            menu_item = self.items[key]
+            collected_params = {}
+            collected_options = {}
+            
+            # Collect parameters if defined
+            if menu_item.params or menu_item.options:
+                result = self._collect_parameters(menu_item.params, menu_item.options)
+                if result is None or result[0] is None:  # User cancelled
+                    return True
+                collected_params, collected_options = result
+            
+            # Execute the action with collected parameters
             try:
-                result = self.items[key].execute()
+                result = menu_item.execute(collected_params, collected_options)
                 if result is False:
                     return False
             except Exception as e:

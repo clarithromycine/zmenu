@@ -39,25 +39,52 @@ class ConsoleApp:
 
     # Menu item action methods
     @MenuItemCmd("greeting")
-    def hello_world(self):
+    def hello_world(self, params, options):
         """Simple hello world action."""
         print("\n👋 Hello from the console app!")
         return True
 
-    @MenuItemCmd("calc")
-    def show_calculator(self):
-        """Simple calculator demonstration."""
+    @MenuItemCmd(
+        "calc",
+        params=[
+            {'name': 'num1', 'type': 'number', 'description': 'First number', 'validation_rule': 'required'},
+            {'name': 'num2', 'type': 'number', 'description': 'Second number', 'validation_rule': 'required'},
+        ],
+        options=[
+            {'name': 'operation', 'type': 'choice', 'description': 'Operation', 'default': 'add', 'choices': ['add', 'subtract', 'multiply', 'divide']},
+        ]
+    )
+    def show_calculator(self, params, options):
+        """Calculator with parameter collection.
+        
+        Args:
+            params: Dict with 'num1' and 'num2'
+            options: Dict with 'operation'
+        """
+        
         try:
-            num1 = float(input("\nEnter first number: "))
-            num2 = float(input("Enter second number: "))
+            num1 = float(params.get('num1', 0))
+            num2 = float(params.get('num2', 0))
+            operation = options.get('operation', 'add')
             
-            print(f"\n  {num1} + {num2} = {num1 + num2}")
-            print(f"  {num1} - {num2} = {num1 - num2}")
-            print(f"  {num1} × {num2} = {num1 * num2}")
-            if num2 != 0:
-                print(f"  {num1} ÷ {num2} = {num1 / num2}")
-            else:
-                print(f"  Division by zero not allowed")
+            result = None
+            if operation == 'add':
+                result = num1 + num2
+                op_symbol = '+'
+            elif operation == 'subtract':
+                result = num1 - num2
+                op_symbol = '-'
+            elif operation == 'multiply':
+                result = num1 * num2
+                op_symbol = '×'
+            elif operation == 'divide':
+                if num2 == 0:
+                    print("\n❌ Division by zero not allowed")
+                    return True
+                result = num1 / num2
+                op_symbol = '÷'
+            
+            print(f"\n  {num1} {op_symbol} {num2} = {result}")
         except ValueError:
             print("\n❌ Invalid number input")
         except KeyboardInterrupt:
@@ -66,7 +93,7 @@ class ConsoleApp:
         return True
 
     @MenuItemCmd("sysinfo")
-    def show_system_info(self):
+    def show_system_info(self, params, options):
         """Display system information."""
         print(f"\nOperating System: {sys.platform}")
         print(f"Python Version: {sys.version.split()[0]}")
@@ -74,7 +101,7 @@ class ConsoleApp:
         return True
 
     @MenuItemCmd("theme")
-    def show_theme_options(self):
+    def show_theme_options(self, params, options):
         """Display theme options."""
         print("\n" + "=" * 60)
         print("  THEME OPTIONS")
@@ -87,7 +114,7 @@ class ConsoleApp:
         return True
 
     @MenuItemCmd("font")
-    def show_font_options(self):
+    def show_font_options(self, params, options):
         """Display font size options."""
         print("\n" + "=" * 60)
         print("  FONT SIZE OPTIONS")
@@ -100,33 +127,33 @@ class ConsoleApp:
         return True
 
     @MenuItemCmd("en")
-    def set_language_en(self):
+    def set_language_en(self, params, options):
         """Set language to English."""
         print(f"\n✅ Language changed to: English")
         return True
 
     @MenuItemCmd("es")
-    def set_language_es(self):
+    def set_language_es(self, params, options):
         """Set language to Español."""
         print(f"\n✅ Language changed to: Español")
         return True
 
     @MenuItemCmd("fr")
-    def set_language_fr(self):
+    def set_language_fr(self, params, options):
         """Set language to Français."""
         print(f"\n✅ Language changed to: Français")
         return True
 
 
     @MenuItemCmd("time")
-    def show_time(self):
+    def show_time(self, params, options):
         """Display current time."""
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"\n  Current time: {current_time}")
         return True
 
     @MenuItemCmd("confirm")
-    def confirm_demo(self):
+    def confirm_demo(self, params, options):
         """Demonstrate the yes/no prompt with left/right arrow keys."""
         result = self.main_menu.yes_no_prompt(
             question="Do you want to continue?",
@@ -143,7 +170,7 @@ class ConsoleApp:
         return True
 
     @MenuItemCmd("multi")
-    def multi_select_demo(self):
+    def multi_select_demo(self, params, options):
         """Demonstrate the multi-select prompt."""
         try:
             items = [            
@@ -170,7 +197,7 @@ class ConsoleApp:
         return True
 
     @MenuItemCmd("form_interactive")
-    def form_interactive_demo(self):
+    def form_interactive_demo(self, params, options):
         """Demonstrate the form system in interactive mode with field callbacks."""
         # Create a handler object with callback methods
         handler = FormFieldHandler()
@@ -204,7 +231,7 @@ class ConsoleApp:
         return True
 
     @MenuItemCmd("form_submit")
-    def form_submit_demo(self):
+    def form_submit_demo(self, params, options):
         """Demonstrate the form system in submit mode."""
         # Initialize FormSystem in submit mode
         # Set endpoint to None for local processing, or provide API endpoint for actual submission
@@ -240,7 +267,7 @@ class ConsoleApp:
         return True
 
     @MenuItemCmd("form_validation")
-    def form_pre_validation_demo(self):
+    def form_pre_validation_demo(self, params, options):
         """Demonstrate the form system with pre-validation functionality."""
         # Create a combined handler with both before_input_* and after_input_* methods
         handler = CombinedFormHandler()
