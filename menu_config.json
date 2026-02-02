@@ -8,7 +8,7 @@
     },
     {
       "label": "Tools",
-      "icon": "🛠️",
+      "icon": "🔧",
       "desc": "Collection of utility tools",
       "items": [
         {
@@ -72,7 +72,7 @@
     {
       "cmd": "multi",
       "label": "Multi-Select Demo",
-      "icon": "☑️",
+      "icon": "📌",
       "desc": "Test multi-select with checkboxes"
     },
     {
