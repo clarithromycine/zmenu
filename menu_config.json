@@ -56,26 +56,10 @@
           ]
         },
         {
-          "label": "Language",
+          "cmd": "language",
+          "label": "Select Language",
           "icon": "🌐",
-          "desc": "Select interface language",
-          "items": [
-            {
-              "cmd": "en",
-              "label": "English",
-              "desc": "Set interface language to English"
-            },
-            {
-              "cmd": "es",
-              "label": "Español",
-              "desc": "Cambiar idioma de interfaz al español"
-            },
-            {
-              "cmd": "fr",
-              "label": "Français",
-              "desc": "Définir la langue de l'interface au français"
-            }
-          ]
+          "desc": "Choose interface language"
         }
       ]
     },

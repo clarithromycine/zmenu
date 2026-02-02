@@ -130,22 +130,17 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("en")
-    def set_language_en(self, params, options):
-        """Set language to English."""
-        print(f"\n✅ Language changed to: English")
-        return True
-
-    @MenuItemCmd("es")
-    def set_language_es(self, params, options):
-        """Set language to Español."""
-        print(f"\n✅ Language changed to: Español")
-        return True
-
-    @MenuItemCmd("fr")
-    def set_language_fr(self, params, options):
-        """Set language to Français."""
-        print(f"\n✅ Language changed to: Français")
+    @MenuItemCmd(
+        "language",
+        params=[
+            {'name': 'language', 'type': 'choice', 'description': 'Choose interface language', 'default': 'English',
+             'choices': ['English', 'Español', 'Français']},
+        ]
+    )
+    def set_language(self, params, options):
+        """Set interface language."""
+        language = params.get('language', 'English')
+        print(f"\n✅ Language changed to: {language}")
         return True
 
 
