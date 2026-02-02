@@ -68,8 +68,6 @@ class ConsoleApp:
             num2 = float(params.get('num2', 0))
             operation = options.get('operation', 'add')
 
-            print(options.get('text', 'no value'))
-            
             result = None            
             if operation == 'add':
                 result = num1 + num2
@@ -151,11 +149,37 @@ class ConsoleApp:
         return True
 
 
-    @MenuItemCmd("time")
+    @MenuItemCmd(
+        "time",
+        params=[
+            {'name': 'timezone', 'type': 'choice', 'description': 'Select timezone', 'default': 'UTC+8 (CST)',
+             'choices': ['UTC-12', 'UTC-8 (PST)', 'UTC-5 (EST)', 'UTC+0 (GMT)', 'UTC+1 (CET)', 'UTC+5:30 (IST)', 'UTC+8 (CST)', 'UTC+9 (JST)']},
+        ]
+    )
     def show_time(self, params, options):
-        """Display current time."""
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"\n  Current time: {current_time}")
+        """Display current time in selected timezone."""
+        import datetime
+        from datetime import timezone, timedelta
+        
+        timezone_choice = params.get('timezone', 'UTC+8 (CST)')
+        
+        # Parse timezone offset
+        tz_map = {
+            'UTC-12': timezone(timedelta(hours=-12)),
+            'UTC-8 (PST)': timezone(timedelta(hours=-8)),
+            'UTC-5 (EST)': timezone(timedelta(hours=-5)),
+            'UTC+0 (GMT)': timezone(timedelta(hours=0)),
+            'UTC+1 (CET)': timezone(timedelta(hours=1)),
+            'UTC+5:30 (IST)': timezone(timedelta(hours=5, minutes=30)),
+            'UTC+8 (CST)': timezone(timedelta(hours=8)),
+            'UTC+9 (JST)': timezone(timedelta(hours=9)),
+        }
+        
+        tz = tz_map.get(timezone_choice, timezone(timedelta(hours=8)))
+        current_time = datetime.datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+        
+        print(f"\n  Timezone: {timezone_choice}")
+        print(f"  Current time: {current_time}")
         return True
 
     @MenuItemCmd("confirm")

@@ -561,6 +561,7 @@ class Menu:
             param_type = param.get('type', 'text')
             description = param.get('description', '')
             validation_rule = param.get('validation_rule', 'required')
+            default_value = param.get('default', None)
             
             field_data = {
                 'id': name,
@@ -570,6 +571,10 @@ class Menu:
                 'type': 'text',  # Default to text
                 'required': True,
             }
+            
+            # Add default value if provided
+            if default_value is not None:
+                field_data['default'] = default_value
             
             # Map param types to form field types
             if param_type == 'number':
