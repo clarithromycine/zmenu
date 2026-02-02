@@ -38,12 +38,9 @@ class FormSystem:
       Called before prompting user; can return pre-validated value or None
     - after_input_<field_id>(value, field, current_results) -> None
       Called after user input collected; for immediate processing/validation
-    
-    Legacy mode parameter ('interactive', 'submit') is deprecated but still supported.
-    All modes now use unified handler pattern.
     """
     
-    def __init__(self, mode: str = 'submit', handler: Optional[Any] = None, endpoint: Optional[str] = None, pre_validation_handler: Optional[Any] = None):
+    def __init__(self, mode: str = 'submit', handler: Optional[Any] = None, endpoint: Optional[str] = None):
         """
         Initialize FormSystem.
         
@@ -51,17 +48,9 @@ class FormSystem:
             mode: 'interactive' or 'submit' (default: 'submit')
             handler: Handler object with callback methods (before_input_* and/or after_input_*)
             endpoint: API endpoint URL (optional for submit mode)
-            pre_validation_handler: DEPRECATED - use handler with before_input_* methods instead
         """
         self.mode = mode  # 'interactive' or 'submit'
         self.handler = handler
-        
-        # Support legacy pre_validation_handler for backward compatibility
-        if pre_validation_handler and not handler:
-            self.pre_validation_handler = pre_validation_handler
-        else:
-            self.pre_validation_handler = None
-            
         self.endpoint = endpoint
         self.menu = Menu(title="Form")
         self.results = {}
@@ -79,21 +68,21 @@ class FormSystem:
     def _validate_text(self, value: str, field: FormField) -> tuple[bool, str]:
         """Validate text input."""
         if not value and field.required:
-            return False, "此字段为必填项"
+            return False, "This field is required"
         
         validation = field.validation
         
         if value:
             if 'minLength' in validation and len(value) < validation['minLength']:
-                return False, f"最小长度为 {validation['minLength']} 个字符"
+                return False, f"Minimum length is {validation['minLength']} characters"
             
             if 'maxLength' in validation and len(value) > validation['maxLength']:
-                return False, f"最大长度为 {validation['maxLength']} 个字符"
+                return False, f"Maximum length is {validation['maxLength']} characters"
             
             if 'pattern' in validation:
                 import re
                 if not re.match(validation['pattern'], value):
-                    return False, validation.get('errorMessage', '输入格式不正确')
+                    return False, validation.get('errorMessage', 'Invalid format')
         
         return True, ""
     
@@ -104,14 +93,14 @@ class FormSystem:
         if field.description:
             print(f"    {field.description}")
         if field.placeholder:
-            print(f"    (例如: {field.placeholder})")
+            print(f"    (e.g., {field.placeholder})")
         if not field.required:
-            print(f"    (可选，按 ENTER 跳过)")
+            print(f"    (optional, press ENTER to skip)")
         
         # Check for pre-validation
         pre_validated_value = self._check_pre_validation(field)
         if pre_validated_value is not None:
-            print(f"    (预设值: {pre_validated_value})")
+            print(f"    (pre-filled: {pre_validated_value})")
             use_existing = self._confirm_use_existing_value(pre_validated_value)
             if use_existing:
                 return pre_validated_value
@@ -120,11 +109,11 @@ class FormSystem:
             while True:
                 user_input = input("➤ ").strip()
                 
-                # 如果是可选字段且用户按ENTER，跳过
+                # If optional field and user pressed ENTER, skip
                 if not user_input and not field.required:
                     return None
                 
-                # 验证输入
+                # Validate input
                 is_valid, error_msg = self._validate_text(user_input, field)
                 if not is_valid:
                     print(f"❌ {error_msg}")
@@ -139,7 +128,7 @@ class FormSystem:
         # Check for pre-validation
         pre_validated_value = self._check_pre_validation(field)
         if pre_validated_value is not None:
-            print(f"    (预设值: {pre_validated_value})")
+            print(f"    (pre-filled: {pre_validated_value})")
             use_existing = self._confirm_use_existing_value(pre_validated_value)
             if use_existing:
                 print(f"[{field_num}/{total_fields}] {field.label}: {pre_validated_value}")
@@ -154,17 +143,17 @@ class FormSystem:
             print(f"    {field.description}")
             lines_printed += 1
         if field.placeholder:
-            print(f"    (例如: {field.placeholder})")
+            print(f"    (e.g., {field.placeholder})")
             lines_printed += 1
         if not field.required:
-            print(f"    (可选，按 ENTER 跳过)")
+            print(f"    (optional, press ENTER to skip)")
             lines_printed += 1
         
         try:
             while True:
                 user_input = input("➤ ").strip()
                 
-                # 如果是可选字段且用户按ENTER，跳过
+                # If optional field and user pressed ENTER, skip
                 if not user_input and not field.required:
                     # Clear all lines for this field and show the result
                     import sys
@@ -173,7 +162,7 @@ class FormSystem:
                     print(f"[{field_num}/{total_fields}] {field.label}: (skipped)")
                     return None
                 
-                # 验证输入
+                # Validate input
                 is_valid, error_msg = self._validate_text(user_input, field)
                 if not is_valid:
                     print(f"❌ {error_msg}")
@@ -209,7 +198,7 @@ class FormSystem:
             print(f"\n[{field_num}/{total_fields}] {field.label}")
             if field.description:
                 print(f"    {field.description}")
-            print(f"    (使用 ↑↓ 箭头键选择，ENTER 确认)")
+            print(f"    (Use ↑↓ arrow keys to navigate, ENTER to confirm)")
             
             # Check for pre-validation
             pre_validated_value = self._check_pre_validation(field)
@@ -221,13 +210,13 @@ class FormSystem:
                         matching_option = option
                         break
                 if matching_option:
-                    print(f"    (预设值: {matching_option['label']})")
+                    print(f"    (pre-filled: {matching_option['label']})")
                     use_existing = self._confirm_use_existing_value(matching_option['label'])
                     if use_existing:
                         return pre_validated_value
             
             if not field.options:
-                print("❌ 没有可用的选项")
+                print("❌ No options available")
                 return None
             
             selected_idx = 0
@@ -273,10 +262,10 @@ class FormSystem:
                         show_options = True  # 需要重新显示选项
                     elif key == 'enter':
                         selected_value = field.options[selected_idx]['value']
-                        print(f"✓ 已选择: {field.options[selected_idx]['label']}")
+                        print(f"✓ Selected: {field.options[selected_idx]['label']}")
                         return selected_value
                     elif key == 'esc':
-                        print("⊘ 已取消")
+                        print("⊘ Cancelled")
                         return None
                     # 对于无效按键（包括 'space'、'unknown' 等），show_options 保持 False
                     # 这样下次循环就不会重新显示选项
@@ -299,14 +288,14 @@ class FormSystem:
                         matching_option = option
                         break
                 if matching_option:
-                    print(f"    (预设值: {matching_option['label']})")
+                    print(f"    (pre-filled: {matching_option['label']})")
                     use_existing = self._confirm_use_existing_value(matching_option['label'])
                     if use_existing:
                         print(f"[{field_num}/{total_fields}] {field.label}: {matching_option['label']}")
                         return pre_validated_value
             
             if not field.options:
-                print("❌ 没有可用的选项")
+                print("❌ No options available")
                 return None
             
             selected_idx = 0
@@ -316,7 +305,7 @@ class FormSystem:
             lines_printed = 2  # Start with the blank line and field header line: "\n[1/6] Field Name"
             if field.description:
                 lines_printed += 1
-            #lines_printed += 1  # Instruction line: "(使用 ↑↓ 箭头键选择，ENTER 确认)"
+            #lines_printed += 1  # Instruction line: "(Use ↑↓ arrow keys to navigate, ENTER to confirm)"
             lines_printed += len(field.options)  # All the options
             lines_printed += 1  # Blank line before options
             
@@ -325,46 +314,46 @@ class FormSystem:
                 print(f"\n[{field_num}/{total_fields}] {field.label}")
                 if field.description:
                     print(f"    {field.description}")
-                print(f"    (使用 ↑↓ 箭头键选择，ENTER 确认)")
+                print(f"    (Use ↑↓ arrow keys to navigate, ENTER to confirm)")
                 
-                show_options = True  # 标记是否需要显示选项
+                show_options = True  # Flag to show options
                 while True:
-                    # 根据标记决定是否显示选项
+                    # Determine whether to show options based on flag
                     if show_options:                        
-                        # 显示选项
+                        # Display options
                         print()
                         for i, option in enumerate(field.options):
                             if i == selected_idx:
-                                # 高亮选中的选项
+                                # Highlight selected option
                                 print(f"  ● {option['label']}")
                             else:
                                 print(f"    {option['label']}")
                     
-                    # 重置标记，等待按键处理决定是否需要重新显示
+                    # Reset flag and wait for key handling to determine whether to redisplay
                     show_options = False
                     
-                    # 获取用户输入
+                    # Get user input
                     key = self._get_key()
                     
                     if key == 'up':
                         selected_idx = (selected_idx - 1) % len(field.options)
-                        # 清除之前的输出，重新显示
+                        # Clear previous output and redisplay
                         self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        show_options = True  # Need to redisplay options
                     elif key == 'down':
                         selected_idx = (selected_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
+                        # Clear previous output and redisplay
                         self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        show_options = True  # Need to redisplay options
                     elif key == 'left' or key == 'right':
                         # Treat left/right like up/down for single select
                         if key == 'left':
                             selected_idx = (selected_idx - 1) % len(field.options)
                         else:  # key == 'right'
                             selected_idx = (selected_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
+                        # Clear previous output and redisplay
                         self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
+                        show_options = True  # Need to redisplay options
                     elif key == 'enter':
                         selected_value = field.options[selected_idx]['value']
                         selected_label = field.options[selected_idx]['label']
@@ -375,14 +364,14 @@ class FormSystem:
                         print(f"[{field_num}/{total_fields}] {field.label}: {selected_label}")
                         return selected_value
                     elif key == 'esc':
-                        print("⊘ 已取消")
+                        print("⊘ Cancelled")
                         # Clear all lines for this field
                         import sys
                         for _ in range(lines_printed):
                             sys.stdout.write('\033[1A\033[2K')
                         return None
-                    # 对于无效按键（包括 'space'、'unknown' 等），show_options 保持 False
-                    # 这样下次循环就不会重新显示选项
+                    # For invalid keys (like 'space', 'unknown', etc), show_options remains False
+                    # Next loop iteration won't redisplay options
             except KeyboardInterrupt:
                 raise
         finally:
@@ -395,7 +384,7 @@ class FormSystem:
             print(f"\n[{field_num}/{total_fields}] {field.label}")
             if field.description:
                 print(f"    {field.description}")
-            print(f"    (使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)")
+            print(f"    (Use ↑↓ arrow keys to navigate, SPACE to toggle, ENTER to confirm)")
             
             # Check for pre-validation
             pre_validated_value = self._check_pre_validation(field)
@@ -407,13 +396,13 @@ class FormSystem:
                         matching_options.append(option['label'])
                 
                 if matching_options:
-                    print(f"    (预设值: {', '.join(matching_options)})")
+                    print(f"    (pre-filled: {', '.join(matching_options)})")
                     use_existing = self._confirm_use_existing_value(', '.join(matching_options))
                     if use_existing:
                         return pre_validated_value
             
             if not field.options:
-                print("❌ 没有可用的选项")
+                print("❌ No options available")
                 return None
             
             selected_indices = set()
@@ -476,14 +465,14 @@ class FormSystem:
                         selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                         selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
                         if selected_values:
-                            print(f"\n✓ 已选择 {len(selected_values)} 项:")
+                            print(f"\n✓ Selected {len(selected_values)} items:")
                             for label in selected_labels:
                                 print(f"    • {label}")
                         else:
-                            print(f"\n✓ 未选择任何项")
+                            print(f"\n✓ No items selected")
                         return selected_values if selected_values else []
                     elif key == 'esc':
-                        print("⊘ 已取消")
+                        print("⊘ Cancelled")
                         return None
                     # 对于无效按键（包括 'unknown' 等），show_options 保持 False
                     # 这样下次循环就不会重新显示选项
@@ -506,14 +495,14 @@ class FormSystem:
                         matching_options.append(option['label'])
                 
                 if matching_options:
-                    print(f"    (预设值: {', '.join(matching_options)})")
+                    print(f"    (pre-filled: {', '.join(matching_options)})")
                     use_existing = self._confirm_use_existing_value(', '.join(matching_options))
                     if use_existing:
                         print(f"[{field_num}/{total_fields}] {field.label}: {', '.join(matching_options)}")
                         return pre_validated_value
             
             if not field.options:
-                print("❌ 没有可用的选项")
+                print("❌ No options available")
                 return None
             
             selected_indices = set()
@@ -523,7 +512,7 @@ class FormSystem:
             lines_printed = 2  # Start with the blank line and field header line: "\n[1/6] Field Name"
             if field.description:
                 lines_printed += 1
-            lines_printed += 1  # Instruction line: "(使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)"
+            lines_printed += 1  # Instruction line: "(Use ↑↓ arrow keys to navigate, SPACE to toggle, ENTER to confirm)"
             lines_printed += len(field.options)  # All the options
             lines_printed += 2  # Blank line before options and selection count line
             
@@ -532,60 +521,60 @@ class FormSystem:
                 print(f"\n[{field_num}/{total_fields}] {field.label}")
                 if field.description:
                     print(f"    {field.description}")
-                print(f"    (使用 ↑↓ 箭头键导航，SPACE 切换选择，ENTER 确认)")
+                print(f"    (Use ↑↓ arrow keys to navigate, SPACE to toggle, ENTER to confirm)")
                 
-                show_options = True  # 标记是否需要显示选项
+                show_options = True  # Flag to show options
                 while True:
-                    # 根据标记决定是否显示选项
+                    # Determine whether to show options based on flag
                     if show_options:
-                        # 显示选项
+                        # Display options
                         print()
                         for i, option in enumerate(field.options):
                             checkbox = "☑️" if i in selected_indices else "☐"
                             if i == current_idx:
-                                # 高亮当前选项
+                                # Highlight current option
                                 print(f"  ► {checkbox} {option['label']}")
                             else:
                                 print(f"    {checkbox} {option['label']}")
                         
-                        # 显示已选择数量
+                        # Show selected count
                         selected_count = len(selected_indices)
-                        print(f"\n  已选择: {selected_count} 项")
+                        print(f"\n  Selected: {selected_count} items")
                     
-                    # 重置标记，等待按键处理决定是否需要重新显示
+                    # Reset flag and wait for key handling to determine whether to redisplay
                     show_options = False
                     
-                    # 获取用户输入
+                    # Get user input
                     key = self._get_key()
                     
                     if key == 'up':
                         current_idx = (current_idx - 1) % len(field.options)
-                        # 清除之前的输出，重新显示
+                        # Clear previous output and redisplay
                         self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        show_options = True  # Need to redisplay options
                     elif key == 'down':
                         current_idx = (current_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
+                        # Clear previous output and redisplay
                         self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        show_options = True  # Need to redisplay options
                     elif key == 'left' or key == 'right':
                         # Treat left/right like up/down for multi-select navigation
                         if key == 'left':
                             current_idx = (current_idx - 1) % len(field.options)
                         else:  # key == 'right'
                             current_idx = (current_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
+                        # Clear previous output and redisplay
                         self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        show_options = True  # Need to redisplay options
                     elif key == 'space':
-                        # 切换选择
+                        # Toggle selection
                         if current_idx in selected_indices:
                             selected_indices.remove(current_idx)
                         else:
                             selected_indices.add(current_idx)
-                        # 清除之前的输出，重新显示
+                        # Clear previous output and redisplay
                         self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
+                        show_options = True  # Need to redisplay options
                     elif key == 'enter':
                         selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                         selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
@@ -604,7 +593,7 @@ class FormSystem:
                         
                         return selected_values if selected_values else []
                     elif key == 'esc':
-                        print("⊘ 已取消")
+                        print("⊘ Cancelled")
                         # Clear all lines for this field
                         import sys
                         for _ in range(lines_printed):
@@ -635,7 +624,9 @@ class FormSystem:
     def _check_pre_validation(self, field: FormField) -> Optional[Any]:
         """
         Check if there's a before_input handler for this field.
-        Supports both new pattern (before_input_*) and legacy pattern (pre_validate_*).
+        
+        Pattern:
+        - before_input_<field_id>(field, current_results) -> Optional[value]
         
         Args:
             field: The field to check for before_input
@@ -643,35 +634,20 @@ class FormSystem:
         Returns:
             Pre-validated value if available, None otherwise
         """
-        if not self.handler and not self.pre_validation_handler:
+        if not self.handler:
             return None
         
-        # Try new pattern first: before_input_<field_id>
+        # Check for before_input_<field_id>
         before_input_name = f'before_input_{field.id}'
         
-        # Try with handler first
-        if self.handler and hasattr(self.handler, before_input_name):
+        if hasattr(self.handler, before_input_name):
             callback_method = getattr(self.handler, before_input_name)
             try:
                 result = callback_method(field, self.results)
-                # Debug: Log successful before_input call
-                if result is not None:
-                    pass  # Successfully got pre-validated value
                 return result
             except Exception as e:
                 print(f"❌ Error in before_input for field '{field.id}': {str(e)}")
                 return None
-        
-        # Fall back to legacy pre_validation_handler with pre_validate_* pattern
-        if self.pre_validation_handler:
-            pre_validate_name = f'pre_validate_{field.id}'
-            if hasattr(self.pre_validation_handler, pre_validate_name):
-                callback_method = getattr(self.pre_validation_handler, pre_validate_name)
-                try:
-                    return callback_method(field, self.results)
-                except Exception as e:
-                    print(f"❌ Error in pre_validation for field '{field.id}': {str(e)}")
-                    return None
         
         return None
     
@@ -745,7 +721,7 @@ class FormSystem:
         try:
             # Print initial form header
             print("\n" + "="*60)
-            print(f"  {form_data.get('icon', '📝')} {form_data.get('title', '表单')}")
+            print(f"  {form_data.get('icon', '📝')} {form_data.get('title', 'Form')}")
             print("="*60)
             if form_data.get('description'):
                 print(f"\n{form_data['description']}\n")
@@ -779,7 +755,7 @@ class FormSystem:
             
         except KeyboardInterrupt:
             print("\n\n" + "="*60)
-            print("  ⏹️  表单已取消")
+            print("  ⏹️  Form cancelled")
             print("="*60 + "\n")
             return None
     
@@ -818,9 +794,8 @@ class FormSystem:
         """
         Invoke after_input handler callback for a field.
         
-        Supports both patterns:
-        - New: after_input_<field_id>(value, field, current_results)
-        - Legacy: on_field_<field_id>(value, field)
+        Pattern:
+        - after_input_<field_id>(value, field, current_results)
         
         Args:
             field_id: The field ID
@@ -830,25 +805,13 @@ class FormSystem:
         if not self.handler:
             return
         
-        # Try new pattern first: after_input_<field_id>
+        # Invoke after_input_<field_id>
         after_input_name = f'after_input_{field_id}'
         
         if hasattr(self.handler, after_input_name):
             callback_method = getattr(self.handler, after_input_name)
             try:
                 callback_method(field_value, field, self.results)
-                print(f"✓ Field '{field_id}' processed successfully")
-            except Exception as e:
-                print(f"❌ Error processing field '{field_id}': {str(e)}")
-            return
-        
-        # Fall back to legacy pattern: on_field_<field_id>
-        on_field_name = f'on_field_{field_id}'
-        
-        if hasattr(self.handler, on_field_name):
-            callback_method = getattr(self.handler, on_field_name)
-            try:
-                callback_method(field_value, field)
                 print(f"✓ Field '{field_id}' processed successfully")
             except Exception as e:
                 print(f"❌ Error processing field '{field_id}': {str(e)}")
@@ -891,7 +854,7 @@ class FormSystem:
         """Save results to JSON file."""
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
-        print(f"\n✓ 结果已保存到: {file_path}")
+        print(f"\n✓ Results saved to: {file_path}")
     
     def print_results(self, results: Dict[str, Any]) -> None:
         """Print results in OpenClaw-style formatted way."""

@@ -286,8 +286,6 @@ class FormFieldHandler:
       Called before prompting user; can suggest pre-validated values
     - after_input_<field_id>(value, field, current_results) -> None
       Called after user input collected; for immediate processing
-    
-    Backward compatibility: on_field_* methods still work
     """
     
     def after_input_name(self, value, field, results):
@@ -343,41 +341,14 @@ class FormFieldHandler:
             print(f"  ✓ Bio length: {len(value)} characters")
         else:
             print(f"  ⚠️  Bio field skipped")
-    
-    # Legacy methods (still work for backward compatibility)
-    def on_field_name(self, value, field):
-        """DEPRECATED: Use after_input_name instead."""
-        self.after_input_name(value, field, {})
-    
-    def on_field_email(self, value, field):
-        """DEPRECATED: Use after_input_email instead."""
-        self.after_input_email(value, field, {})
-    
-    def on_field_country(self, value, field):
-        """DEPRECATED: Use after_input_country instead."""
-        self.after_input_country(value, field, {})
-    
-    def on_field_interests(self, value, field):
-        """DEPRECATED: Use after_input_interests instead."""
-        self.after_input_interests(value, field, {})
-    
-    def on_field_plan(self, value, field):
-        """DEPRECATED: Use after_input_plan instead."""
-        self.after_input_plan(value, field, {})
-    
-    def on_field_bio(self, value, field):
-        """DEPRECATED: Use after_input_bio instead."""
-        self.after_input_bio(value, field, {})
 
 
 class FormPreValidationHandler:
-    """Handler for form before_input callbacks (formerly pre-validation).
+    """Handler for form before_input callbacks.
     
     Pattern:
     - before_input_<field_id>(field, current_results) -> Optional[value]
       Called before prompting user; can suggest pre-validated values
-    
-    Backward compatibility: pre_validate_* methods still work
     """
     
     def __init__(self):
@@ -424,31 +395,6 @@ class FormPreValidationHandler:
         """Suggest value before 'bio' field input."""
         # Don't provide a default for bio since it's usually unique
         return None
-    
-    # Legacy methods (still work for backward compatibility)
-    def pre_validate_name(self, field, current_results):
-        """DEPRECATED: Use before_input_name instead."""
-        return self.before_input_name(field, current_results)
-    
-    def pre_validate_email(self, field, current_results):
-        """DEPRECATED: Use before_input_email instead."""
-        return self.before_input_email(field, current_results)
-    
-    def pre_validate_country(self, field, current_results):
-        """DEPRECATED: Use before_input_country instead."""
-        return self.before_input_country(field, current_results)
-    
-    def pre_validate_interests(self, field, current_results):
-        """DEPRECATED: Use before_input_interests instead."""
-        return self.before_input_interests(field, current_results)
-    
-    def pre_validate_subscription(self, field, current_results):
-        """DEPRECATED: Use before_input_subscription instead."""
-        return self.before_input_subscription(field, current_results)
-    
-    def pre_validate_bio(self, field, current_results):
-        """DEPRECATED: Use before_input_bio instead."""
-        return self.before_input_bio(field, current_results)
 
 
 class CombinedFormHandler(FormFieldHandler, FormPreValidationHandler):
@@ -462,3 +408,4 @@ class CombinedFormHandler(FormFieldHandler, FormPreValidationHandler):
     and post-processing functionality.
     """
     pass
+
