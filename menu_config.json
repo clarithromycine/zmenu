@@ -7,7 +7,7 @@
       "desc": "Display a friendly greeting message"
     },
     {
-      "name": "Tools",
+      "label": "Tools",
       "icon": "🛠️",
       "desc": "Collection of utility tools",
       "items": [
@@ -32,12 +32,12 @@
       ]
     },
     {
-      "name": "N-Level Menu Demo",
+      "label": "N-Level Menu Demo",
       "icon": "📁",
       "desc": "Demonstrate nested menu capabilities",
       "items": [
         {
-          "name": "Display Options",
+          "label": "Display Options",
           "icon": "📺",
           "desc": "Customize visual display settings",
           "items": [
@@ -56,7 +56,7 @@
           ]
         },
         {
-          "name": "Language",
+          "label": "Language",
           "icon": "🌐",
           "desc": "Select interface language",
           "items": [

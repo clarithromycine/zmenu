@@ -123,7 +123,7 @@ class Menu:
         Menu structure is defined in JSON following the display order.
         Items can be either:
         - Items with 'cmd': action items with decorated functions
-        - Items with 'name': submenu groups containing 'items'
+        - Items with 'label' and 'items': submenu groups
         
         Args:
             functions: Functions decorated with @MenuItemCmd
@@ -150,9 +150,8 @@ class Menu:
             """
             for item_config in menu_list:
                 cmd = item_config.get('cmd')
-                name = item_config.get('name')
-                icon = item_config.get('icon', '')
                 label = item_config.get('label', '')
+                icon = item_config.get('icon', '')
                 desc = item_config.get('desc', '')
                 subitems = item_config.get('items', [])
                 
@@ -162,10 +161,10 @@ class Menu:
                         item_label = label or cmd
                         current_menu.add_item(cmd, item_label, fn, icon, desc)
                 
-                elif name and subitems:  # This is a submenu
+                elif label and subitems:  # This is a submenu
                     # Create submenu - pass icon in icon param, not in label
                     # add_submenu will handle adding icon to label
-                    submenu = current_menu.add_submenu(name, name + " >", icon, desc)
+                    submenu = current_menu.add_submenu(label, label + " >", icon, desc)
                     # Recursively register subitems
                     register_menu_items(subitems, submenu)
         
