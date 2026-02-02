@@ -472,6 +472,15 @@ class Menu:
                         selected_idx = (selected_idx - 1) % max_idx
                     elif value == 'DOWN':
                         selected_idx = (selected_idx + 1) % max_idx
+                    elif value == 'RIGHT':
+                        # For submenu items, RIGHT key acts like ENTER to enter the submenu
+                        key = self._index_to_key(selected_idx)
+                        if key and key in self.submenus:
+                            return key
+                    elif value == 'LEFT':
+                        # For submenu items, LEFT key acts like ESC to go back
+                        if self.parent:
+                            return 'back'
                     self._redraw_menu_in_place(selected_idx)
                     continue
                 if kind == 'ESC':
