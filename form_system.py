@@ -902,9 +902,28 @@ class FormSystem:
         width = 82
         border_h = "─" * (width - 2)
         
+        def get_display_width(text):
+            """Calculate display width of text accounting for emojis and wide characters."""
+            # Import only if needed
+            try:
+                import unicodedata
+                # Calculate display width considering wide characters
+                display_width = 0
+                for char in text:
+                    if unicodedata.east_asian_width(char) in ('F', 'W'):  # Full-width or Wide
+                        display_width += 2
+                    elif unicodedata.category(char).startswith('C'):  # Control characters
+                        continue
+                    else:
+                        display_width += 1
+                return display_width
+            except ImportError:
+                # Fallback to len if unicodedata is not available
+                return len(text)
+        
         def pad_line(text, indent=2):
             """Pad text to fit within the border."""
-            padding = width - len(text) - indent - 1
+            padding = width - get_display_width(text) - indent - 1
             return text + (" " * max(0, padding))
         
         # Header
