@@ -132,10 +132,9 @@ def show_calculator(self, params, options):
 ```
 
 **Parameter Types:**
-- `text` - Plain text input
+- `text` - Plain text input (for both params and options)
 - `number` - Numeric input (validated)
 - `choice` - Single selection from list
-- `string` - String input (for options only)
 - `bool` - Boolean flag (for options only)
 
 **Parameter Definition:**

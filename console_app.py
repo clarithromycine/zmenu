@@ -52,7 +52,7 @@ class ConsoleApp:
         ],
         options=[
             {'name': 'operation', 'type': 'choice', 'description': 'Operation','choices': ['add', 'subtract', 'multiply', 'divide']},
-            {'name': 'text', 'type': 'string', 'description': 'a string text'},
+            {'name': 'text', 'type': 'text', 'description': 'a text note'},
         ]
     )
     def show_calculator(self, params, options):
