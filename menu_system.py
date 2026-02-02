@@ -115,14 +115,14 @@ class Menu:
         self.items[key] = MenuItem(label, action, long_desc)        
         self._item_order.append(key)
     
-    def add_submenu(self, key: str, label: str, icon: Optional[str] = None) -> 'Menu':
+    def add_submenu(self, key: str, label: str, icon: Optional[str] = None, long_desc: Optional[str] = None) -> 'Menu':
         
         if icon:
             label = icon + " " + label
             
         submenu = Menu(title=label, parent=self)
         self.submenus[key] = submenu
-        self.items[key] = MenuItem(label, None)
+        self.items[key] = MenuItem(label, None, long_desc)
         self._item_order.append(key)
         return submenu
     
@@ -188,7 +188,9 @@ class Menu:
                     submenu_key = '.'.join(group_path[:i+1])
                     
                     if submenu_key not in submenus:
-                        submenu = current_menu.add_submenu(submenu_key, group_name+" >")
+                        # For intermediate menus, use group_name; for final one, use the actual label
+                        menu_label = group_name + " >" if i < len(group_path) - 1 else group_name + " >"
+                        submenu = current_menu.add_submenu(submenu_key, menu_label)
                         submenus[submenu_key] = submenu
                     else:
                         submenu = submenus[submenu_key]
