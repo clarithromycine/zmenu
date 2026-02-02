@@ -1,11 +1,11 @@
-# ZMenu - Interactive Console Application Framework
+﻿# ZMenu - Interactive Console Application Framework
 
 A Python framework for building interactive console applications with nested menus, JSON configuration, and form processing.
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
 [![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](./CHANGELOG.md)
 
-## ?? Features
+## Features
 
 - **JSON-based menus** - Hierarchical menu structure from `menu_config.json`
 - **Minimal decorators** - `@MenuItemCmd("cmd")` with all metadata in JSON
@@ -14,7 +14,7 @@ A Python framework for building interactive console applications with nested men
 - **Cross-platform** - Works on Windows, Linux, macOS
 - **Professional UI** - Colored output, emoji support, dynamic updates
 
-## ?? Form System
+## Form System
 
 Single, consistent handler pattern for field processing:
 
@@ -26,7 +26,7 @@ class FormHandler:
     
     def after_input_<field_id>(self, value, field, current_results):
         """Called after user input - process or validate"""
-        print(f"? Value processed: {value}")
+        print(f"Value processed: {value}")
 ```
 
 **Operating Modes:**
@@ -36,20 +36,20 @@ class FormHandler:
 | **submit** | Batch collection, auto-submit to endpoint |
 | **pre-validation** | Suggest values with `before_input_*` |
 
-## ?? Project Structure
+## Project Structure
 
 ```
 zmenu/
-������ menu_config.json       # Menu structure (JSON)
-������ input_handler.py       # Cross-platform keyboard input
-������ menu_system.py         # Menu framework
-������ form_system.py         # Form system
-������ console_app.py         # Application actions
-������ main.py                # Entry point
-������ README.md              # This file
+├── menu_config.json       # Menu structure (JSON)
+├── input_handler.py       # Cross-platform keyboard input
+├── menu_system.py         # Menu framework
+├── form_system.py         # Form system
+├── console_app.py         # Application actions
+├── main.py                # Entry point
+└── README.md              # This file
 ```
 
-## ?? Quick Start
+## Quick Start
 
 ### Prerequisites
 Python 3.6+, no external dependencies
@@ -65,9 +65,9 @@ python main.py
 ```json
 {
   "menu": [
-    {"cmd": "hello", "label": "Say Hello", "icon": "??"},
-    {"name": "Tools", "icon": "???", "items": [
-      {"cmd": "calc", "label": "Calculator", "icon": "??"}
+    {"cmd": "hello", "label": "Say Hello"},
+    {"name": "Tools", "items": [
+      {"cmd": "calc", "label": "Calculator"}
     ]}
   ]
 }
@@ -80,12 +80,12 @@ from menu_system import MenuItemCmd
 class ConsoleApp:
     @MenuItemCmd("hello")
     def hello(self):
-        print("\n?? Hello!")
+        print("\nHello!")
         return True
     
     @MenuItemCmd("calc")
     def calc(self):
-        print(f"\n{2+2}")
+        print(f"\n2+2={2+2}")
         return True
 ```
 
@@ -96,11 +96,11 @@ app = ConsoleApp("My App")
 app.run()
 ```
 
-## ?? Navigation
+## Navigation
 
 | Key | Action |
 |-----|--------|
-| **���� Arrows** | Navigate menu items |
+| **Up/Down Arrows** | Navigate menu items |
 | **1-9** | Jump to item number |
 | **Enter** | Select item |
 | **ESC** | Back/Exit |
@@ -109,10 +109,10 @@ app.run()
 
 **Form Navigation:**
 - **Text input:** Type normally, Enter to submit
-- **Single choice:** ���� or ���� to select, Enter to confirm
-- **Multi-choice:** ���� to navigate, Space to toggle, Enter to confirm
+- **Single choice:** Up/Down or Left/Right to select, Enter to confirm
+- **Multi-choice:** Up/Down to navigate, Space to toggle, Enter to confirm
 
-## ??? Architecture
+## Architecture
 
 ### JSON Configuration
 
@@ -124,12 +124,10 @@ Menu structure with hierarchical organization:
     {
       "cmd": "greeting",      # Command ID
       "label": "Say Hello",   # Display text
-      "icon": "??",           # Optional emoji
       "desc": "Description"   # Optional help
     },
     {
       "name": "Tools",        # Submenu group
-      "icon": "???",
       "items": [              # Nested items
         {"cmd": "calc", "label": "Calculator"}
       ]
@@ -142,7 +140,6 @@ Menu structure with hierarchical organization:
 - Menu order follows JSON array order
 - Supports unlimited nesting
 - All metadata centralized
-- Icons optional
 
 ### Decorator Pattern
 
@@ -154,7 +151,7 @@ def action_method(self):
     return True   # Keep menu open
 ```
 
-## ?? API Reference
+## API Reference
 
 ### Configuration Fields
 
@@ -163,7 +160,6 @@ def action_method(self):
 | **cmd** | For actions | Command ID |
 | **label** | Yes | Display text |
 | **name** | For submenus | Submenu name |
-| **icon** | No | Emoji icon |
 | **desc** | No | Help text |
 | **items** | For submenus | Nested items |
 
@@ -193,7 +189,7 @@ form = FormSystem(mode='interactive', handler=MyHandler())
 results = form.process_form(form_data)
 ```
 
-## ?? Form Examples
+## Form Examples
 
 ### Interactive Mode with Field Processing
 
@@ -206,7 +202,7 @@ class MyHandler:
     def after_input_email(self, value, field, results):
         """Validate email"""
         if '@' in value:
-            print("? Valid email")
+            print("Valid email")
 ```
 
 ### Pre-Validation and Processing
@@ -223,7 +219,7 @@ form = FormSystem(mode='submit', endpoint='https://api.example.com/submit')
 results = form.process_form(form_data)
 ```
 
-## ?? Best Practices
+## Best Practices
 
 - Keep JSON configuration organized and readable
 - Use descriptive labels and descriptions
@@ -234,4 +230,4 @@ results = form.process_form(form_data)
 
 ---
 
-**Happy menu building! ??**
+**Happy menu building!**
