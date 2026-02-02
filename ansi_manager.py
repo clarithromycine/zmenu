@@ -53,12 +53,14 @@ class AnsiScheme:
         self.config = {
             "theme": {
                 "primary": "orange",
-                "secondary": "gray"
+                "secondary": "gray",
+                "error": "red"
             },
+            "reset": {"code": "\033[0m", "name": "reset"},
             "colors": {
                 "orange": {"code": "\033[38;5;208m", "name": "orange"},
                 "gray": {"code": "\033[90m", "name": "gray"},
-                "reset": {"code": "\033[0m", "name": "reset"}
+                "red": {"code": "\033[38;5;196m", "name": "red"}
             },
             "cursor": {
                 "hide": "\033[?25l",
@@ -93,7 +95,7 @@ class AnsiScheme:
         """Get ANSI code for a theme color role.
         
         Args:
-            role: Theme role ('primary', 'secondary')
+            role: Theme role ('primary', 'secondary', 'error')
         
         Returns:
             ANSI escape code
@@ -102,6 +104,17 @@ class AnsiScheme:
             color_name = self.config['theme'][role]
             return self.get_color(color_name)
         return ""
+    
+    def get_reset(self) -> str:
+        """Get ANSI code for reset (clear all formatting).
+        
+        Returns:
+            ANSI escape code
+        """
+        reset_config = self.config.get('reset', {})
+        if isinstance(reset_config, dict):
+            return reset_config.get('code', "\033[0m")
+        return "\033[0m"
     
     def get_cursor(self, action: str) -> str:
         """Get ANSI code for cursor operation.
@@ -153,7 +166,7 @@ class AnsiScheme:
             Colorized text with reset code
         """
         color_code = self.get_color(color)
-        reset_code = self.get_color('reset')
+        reset_code = self.get_reset()
         if color_code:
             return f"{color_code}{text}{reset_code}"
         return text
@@ -171,11 +184,11 @@ class AnsiScheme:
         desc_text = ""
         if long_desc:
             secondary_code = self.get_color('secondary')
-            reset_code = self.get_color('reset')
+            reset_code = self.get_reset()
             desc_text = f" {secondary_code}({long_desc}){reset_code}"
         
         primary_code = self.get_color('primary')
-        reset_code = self.get_color('reset')
+        reset_code = self.get_reset()
         return f"  {primary_code}➤ {label}{desc_text} {reset_code}"
     
     def get_checkbox_item(self, checked: bool, label: str, highlighted: bool = False) -> str:
@@ -193,7 +206,7 @@ class AnsiScheme:
         
         if highlighted:
             primary_code = self.get_color('primary')
-            reset_code = self.get_color('reset')
+            reset_code = self.get_reset()
             return f"{primary_code}  {checkbox} {label}{reset_code}"
         else:
             return f"  {checkbox} {label}"
@@ -208,7 +221,7 @@ class AnsiScheme:
             Formatted yes/no text
         """
         primary_code = self.get_color('primary')
-        reset_code = self.get_color('reset')
+        reset_code = self.get_reset()
         
         yes_text = f"{primary_code}➤ YES{reset_code}" if selected_index == 0 else "  YES"
         no_text = f"{primary_code}➤ NO{reset_code}" if selected_index == 1 else "  NO"

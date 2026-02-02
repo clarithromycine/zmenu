@@ -1,7 +1,13 @@
 {
   "theme": {
     "primary": "orange",
-    "secondary": "gray"
+    "secondary": "gray",
+    "error": "red"
+  },
+  "reset": {
+    "code": "\u001b[0m",
+    "name": "reset",
+    "description": "Reset all formatting to default"
   },
   "colors": {
     "orange": {
@@ -15,12 +21,6 @@
       "name": "gray",
       "rgb": "rgb(128, 128, 128)",
       "description": "Gray color"
-    },
-    "reset": {
-      "code": "\u001b[0m",
-      "name": "reset",
-      "rgb": "rgb(255, 255, 255)",
-      "description": "Reset all formatting to default"
     },
     "red": {
       "code": "\u001b[38;5;196m",
