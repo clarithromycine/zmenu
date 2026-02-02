@@ -1,0 +1,33 @@
+{
+  "colors": {
+    "primary": {
+      "code": "\u001b[38;5;208m",
+      "name": "orange",
+      "description": "Primary highlight color for selected items"
+    },
+    "secondary": {
+      "code": "\u001b[90m",
+      "name": "gray",
+      "description": "Secondary color for descriptions and hints"
+    },
+    "reset": {
+      "code": "\u001b[0m",
+      "name": "reset",
+      "description": "Reset all formatting to default"
+    }
+  },
+  "cursor": {
+    "hide": "\u001b[?25l",
+    "show": "\u001b[?25h"
+  },
+  "cursor_movement": {
+    "up": "\u001b[A",
+    "down": "\u001b[B",
+    "right": "\u001b[C",
+    "left": "\u001b[D"
+  },
+  "screen": {
+    "clear_line": "\u001b[2K",
+    "clear_to_end": "\u001b[0J"
+  }
+}

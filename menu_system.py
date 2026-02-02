@@ -6,6 +6,7 @@ A flexible and reusable menu framework supporting nested menus.
 from typing import Callable, Dict, List, Optional, Tuple
 import os
 import sys
+from ansi_manager import get_ansi_scheme
 
 try:    
     import fcntl
@@ -84,12 +85,14 @@ class Menu:
     
     def _hide_cursor(self) -> None:
         """Hide the cursor using ANSI escape codes."""
-        sys.stdout.write('\033[?25l')
+        ansi = get_ansi_scheme()
+        sys.stdout.write(ansi.get_cursor('hide'))
         sys.stdout.flush()
     
     def _show_cursor(self) -> None:
         """Show the cursor using ANSI escape codes."""
-        sys.stdout.write('\033[?25h')
+        ansi = get_ansi_scheme()
+        sys.stdout.write(ansi.get_cursor('show'))
         sys.stdout.flush()
     
     def _clear_screen(self) -> None:
@@ -201,16 +204,17 @@ class Menu:
         Args:
             selected_idx: Index of the currently selected item
         """
+        ansi = get_ansi_scheme()
         num_items = len(self._item_order)
         # Count lines: items + back option (if parent) + instruction line
         total_menu_lines = num_items + (1 if self.parent else 0) + 1
         
         # Move cursor up to the start of menu items (skip header)
-        sys.stdout.write(f'\033[{total_menu_lines}A')  # Move up N lines
+        sys.stdout.write(ansi.get_cursor_move('up', total_menu_lines))
         sys.stdout.flush()
         
         # Clear from cursor to end of screen
-        sys.stdout.write('\033[0J')
+        sys.stdout.write(ansi.get_screen('clear_to_end'))
         sys.stdout.flush()
         
         # Redraw menu items
@@ -235,6 +239,7 @@ class Menu:
         Args:
             selected_idx: Index of the currently selected item (0-based)
         """
+        ansi = get_ansi_scheme()
         num_items = len(self._item_order)
         back_idx = num_items
         
@@ -244,8 +249,14 @@ class Menu:
             
             # Highlight selected item with description
             if idx - 1 == selected_idx:
-                desc_text = f" \033[90m({long_desc})\033[0m" if long_desc else ""
-                print(f"  \033[38;5;208m➤ {idx}. {label}{desc_text} \033[0m")
+                desc_text = ""
+                if long_desc:
+                    secondary_code = ansi.get_color('secondary')
+                    reset_code = ansi.get_color('reset')
+                    desc_text = f" {secondary_code}({long_desc}){reset_code}"
+                primary_code = ansi.get_color('primary')
+                reset_code = ansi.get_color('reset')
+                print(f"  {primary_code}➤ {idx}. {label}{desc_text} {reset_code}")
             else:
                 print(f"    {idx}. {label}")
         
@@ -324,22 +335,23 @@ class Menu:
             items: List of {label, description, selected} dicts
             selected_idx: Current selected index
         """
+        ansi = get_ansi_scheme()
         # Move cursor up to start of list (items + instruction + blank = num_items + 2)
         num_items = len(items)
-        sys.stdout.write(f'\033[{num_items + 2}A')  # Move up all items + blank + instruction
+        sys.stdout.write(ansi.get_cursor_move('up', num_items + 2))
         
         # Redraw all items
         for idx, item in enumerate(items):
             checkbox = "[•]" if item['selected'] else "[ ]"
-            highlight = "\033[38;5;208m" if idx == selected_idx else ""
-            reset = "\033[0m" if idx == selected_idx else ""
+            highlight = ansi.get_color('primary') if idx == selected_idx else ""
+            reset = ansi.get_color('reset') if idx == selected_idx else ""
             label = item['label']
             
-            sys.stdout.write('\033[2K')  # Clear entire line
+            sys.stdout.write(ansi.get_screen('clear_line'))  # Clear entire line
             sys.stdout.write(f"\r{highlight}  {checkbox} {label}{reset}\n")
         
         # Move down to instruction line
-        sys.stdout.write(f'\033[{num_items}B')
+        sys.stdout.write(ansi.get_cursor_move('down', num_items))
         sys.stdout.flush()
     
     def multi_select_prompt(self, title: str, items: List[dict], allow_empty: bool = False) -> List[dict]:
@@ -353,6 +365,7 @@ class Menu:
         Returns:
             List of selected items
         """
+        ansi = get_ansi_scheme()
         self._hide_cursor()
         try:
             selected_idx = 0
@@ -363,8 +376,8 @@ class Menu:
             # Display items
             for idx, item in enumerate(items):
                 checkbox = "[•]" if item['selected'] else "[ ]"
-                highlight = "\033[38;5;208m" if idx == selected_idx else ""
-                reset = "\033[0m" if idx == selected_idx else ""
+                highlight = ansi.get_color('primary') if idx == selected_idx else ""
+                reset = ansi.get_color('reset') if idx == selected_idx else ""
                 label = item['label']
                 
                 print(f"{highlight}  {checkbox} {label}{reset}")
@@ -436,14 +449,15 @@ class Menu:
         Args:
             selected: 0 for YES, 1 for NO
         """
-        yes_text = f"\033[38;5;208m➤ YES\033[0m" if selected == 0 else "  YES"
-        no_text = f"\033[38;5;208m➤ NO\033[0m" if selected == 1 else "  NO"
+        ansi = get_ansi_scheme()
+        yes_text = f"{ansi.get_color('primary')}➤ YES{ansi.get_color('reset')}" if selected == 0 else "  YES"
+        no_text = f"{ansi.get_color('primary')}➤ NO{ansi.get_color('reset')}" if selected == 1 else "  NO"
         # Move cursor up 3 lines to YES/NO line, clear it, and reprint
-        sys.stdout.write('\033[3A')  # Move up 3 lines
-        sys.stdout.write('\033[2K')  # Clear the line
+        sys.stdout.write(ansi.get_cursor_move('up', 3))  # Move up 3 lines
+        sys.stdout.write(ansi.get_screen('clear_line'))  # Clear the line
         sys.stdout.write('\r')       # Return to start of line
         sys.stdout.write(f"  {yes_text} / {no_text}\n")
-        sys.stdout.write('\033[3B')  # Move down 3 lines back to input position
+        sys.stdout.write(ansi.get_cursor_move('down', 3))  # Move down 3 lines back to input position
         sys.stdout.flush()
     
     def yes_no_prompt(self, question: str = "Do you want to continue?", description: str = "") -> bool:
@@ -456,6 +470,7 @@ class Menu:
         Returns:
             True if user selects "Yes", False if "No"
         """
+        ansi = get_ansi_scheme()
         self._hide_cursor()
         try:
             selected = 0  # 0 = Yes, 1 = No
@@ -473,8 +488,8 @@ class Menu:
             while True:
                 # Display yes/no (first time normally, then update in place)
                 if first_time:
-                    yes_text = f"\033[38;5;208m➤ YES\033[0m" if selected == 0 else "  YES"
-                    no_text = f"\033[38;5;208m➤ NO\033[0m" if selected == 1 else "  NO"
+                    yes_text = f"{ansi.get_color('primary')}➤ YES{ansi.get_color('reset')}" if selected == 0 else "  YES"
+                    no_text = f"{ansi.get_color('primary')}➤ NO{ansi.get_color('reset')}" if selected == 1 else "  NO"
                     print(f"  {yes_text} / {no_text}")
                     print("\n[Use Arrow Keys ← → to select, Enter to confirm]")
                     first_time = False
