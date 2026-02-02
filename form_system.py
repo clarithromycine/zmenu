@@ -11,25 +11,7 @@ import os
 import sys
 from typing import Any, Dict, List, Optional, Callable
 from menu_system import Menu
-
-try:    
-    import fcntl
-    HAS_FCNTL = True
-except ImportError:
-    HAS_FCNTL = False
-
-try:
-    import msvcrt
-    HAS_MSVCRT = True
-except ImportError:
-    HAS_MSVCRT = False
-
-try:
-    import termios
-    import tty
-    HAS_TERMIOS = True
-except ImportError:
-    HAS_TERMIOS = False
+from input_handler import read_key
 
 
 class FormField:
@@ -626,100 +608,10 @@ class FormSystem:
     def _get_key(self) -> str:
         """Get key input from user (Windows/Unix compatible).
         
-        Uses same key handling logic as menu_system for consistency.
+        Uses centralized input_handler for consistency across the application.
         Returns: 'up', 'down', 'left', 'right', 'enter', 'space', 'esc', 'char:{ch}', 'unknown'
         """
-        # Windows arrow-key handling via msvcrt
-        if HAS_MSVCRT and os.name == 'nt':
-            ch = msvcrt.getch()
-            
-            if ch == b'\x03':  # Ctrl+C
-                raise KeyboardInterrupt()
-            
-            if ch == b'\xe0':  # Extended key (arrow keys, etc.)
-                ch2 = msvcrt.getch()
-                if ch2 == b'H':  # Up arrow
-                    return 'up'
-                elif ch2 == b'P':  # Down arrow
-                    return 'down'
-                elif ch2 == b'K':  # Left arrow
-                    return 'left'
-                elif ch2 == b'M':  # Right arrow
-                    return 'right'
-                return 'unknown'
-            elif ch == b'\r':  # Enter
-                return 'enter'
-            elif ch == b' ':  # Space
-                return 'space'
-            elif ch == b'\x1b':  # Escape
-                return 'esc'
-            else:
-                return f'char:{ch.decode(errors="ignore")}'
-        
-        # POSIX raw terminal handling
-        elif HAS_TERMIOS and sys.stdin.isatty():
-            fd = sys.stdin.fileno()
-            old_settings = termios.tcgetattr(fd)
-            old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-            try:
-                tty.setraw(fd)
-                # First character - read immediately
-                ch = sys.stdin.read(1)
-                
-                if ch == '\x03':  # Ctrl+C
-                    raise KeyboardInterrupt()
-                
-                if ch == '\x1b':  # Escape sequence - try to read more without blocking
-                    # Temporarily set non-blocking mode
-                    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
-                    try:
-                        next1 = sys.stdin.read(1)
-                    except BlockingIOError:
-                        next1 = ''
-                    finally:
-                        fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore blocking mode
-                    
-                    if not next1:
-                        # No follow-up char = bare ESC press
-                        return 'esc'
-                    
-                    if next1 == '[':
-                        # Try to read arrow key indicator
-                        fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
-                        try:
-                            next2 = sys.stdin.read(1)
-                        except BlockingIOError:
-                            next2 = ''
-                        finally:
-                            fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)
-                        
-                        if next2 == 'A':
-                            return 'up'
-                        if next2 == 'B':
-                            return 'down'
-                        if next2 == 'C':
-                            return 'right'
-                        if next2 == 'D':
-                            return 'left'
-                    
-                    # Not an arrow key, just ESC
-                    return 'esc'
-                
-                if ch in ('\r', '\n'):
-                    return 'enter'
-                if ch == ' ':
-                    return 'space'
-                return f'char:{ch}'
-            finally:
-                fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore original flags
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        
-        else:
-            # Fallback: use input() for generic systems
-            inp = input().strip()
-            if inp == '':
-                return 'unknown'
-            return f'char:{inp[0]}'
+        return read_key()
     
     def _clear_lines(self, num_lines: int) -> None:
         """Clear previous lines from console."""

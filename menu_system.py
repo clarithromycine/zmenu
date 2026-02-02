@@ -7,32 +7,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import os
 import sys
 from ansi_manager import get_ansi_scheme
-
-try:    
-    import fcntl
-    HAS_FCNTL = True
-except ImportError:
-    HAS_FCNTL = False
-
-try:
-    import msvcrt
-    import sys as sys_module
-    HAS_MSVCRT = True
-except ImportError:
-    HAS_MSVCRT = False
-
-try:
-    import curses
-    HAS_CURSES = True
-except ImportError:
-    HAS_CURSES = False
-
-try:
-    import termios
-    import tty
-    HAS_TERMIOS = True
-except ImportError:
-    HAS_TERMIOS = False
+from input_handler import read_key_as_tuple
 
 
 
@@ -268,67 +243,6 @@ class Menu:
             else:
                 print(f"    {num_items + 1}. Back to {self.parent.title}")
 
-    def _read_key_posix(self) -> Optional[Tuple[str, Optional[str]]]:
-        """Read a single keypress on POSIX systems using raw terminal input."""
-        if not HAS_TERMIOS:
-            return None
-        
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-        try:
-            tty.setraw(fd)
-            # First character - read immediately
-            ch = sys.stdin.read(1)
-            
-            if ch == '\x03':  # Ctrl+C
-                raise KeyboardInterrupt()
-            
-            if ch == '\x1b':  # Escape sequence - try to read more without blocking
-                # Temporarily set non-blocking mode
-                fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
-                try:
-                    next1 = sys.stdin.read(1)
-                except BlockingIOError:
-                    next1 = ''
-                finally:
-                    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore blocking mode
-                
-                if not next1:
-                    # No follow-up char = bare ESC press
-                    return ('ESC', None)
-                
-                if next1 == '[':
-                    # Try to read arrow key indicator
-                    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
-                    try:
-                        next2 = sys.stdin.read(1)
-                    except BlockingIOError:
-                        next2 = ''
-                    finally:
-                        fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)
-                    
-                    if next2 == 'A':
-                        return ('NAV', 'UP')
-                    if next2 == 'B':
-                        return ('NAV', 'DOWN')
-                    if next2 == 'C':
-                        return ('NAV', 'RIGHT')
-                    if next2 == 'D':
-                        return ('NAV', 'LEFT')
-                
-                # Not an arrow key, just ESC
-                return ('ESC', None)
-            
-            if ch in ('\r', '\n'):
-                return ('ENTER', None)
-            if ch.isdigit():
-                return ('DIGIT', ch)
-            return ('CHAR', ch)
-        finally:
-            fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)  # Restore original flags
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    
     def _redraw_multi_select_in_place(self, items: List[dict], selected_idx: int) -> None:
         """Redraw the multi-select list in place.
         
@@ -392,57 +306,27 @@ class Menu:
             
             while True:
                 try:
-                    if HAS_MSVCRT and os.name == 'nt':
-                        ch = msvcrt.getch()
-                        
-                        if ch == b'\x03':  # Ctrl+C
-                            raise KeyboardInterrupt()
-                        
-                        if ch == b'\xe0':  # Extended key
-                            ch2 = msvcrt.getch()
-                            if ch2 == b'H':  # Up arrow
-                                selected_idx = (selected_idx - 1) % len(items)
-                                self._redraw_multi_select_in_place(items, selected_idx)
-                                continue
-                            elif ch2 == b'P':  # Down arrow
-                                selected_idx = (selected_idx + 1) % len(items)
-                                self._redraw_multi_select_in_place(items, selected_idx)
-                                continue
-                        elif ch == b' ':  # Space to toggle
-                            items[selected_idx]['selected'] = not items[selected_idx]['selected']
-                            self._redraw_multi_select_in_place(items, selected_idx)
-                            continue
-                        elif ch == b'\r':  # Enter to confirm
-                            return [item for item in items if item['selected']]
-                        elif ch == b'\x1b':  # Escape
-                            return None
+                    key_info = read_key_as_tuple()
+                    if not key_info:
+                        continue
+                    kind, value = key_info
                     
-                    elif HAS_TERMIOS and sys.stdin.isatty():
-                        key_info = self._read_key_posix()
-                        if not key_info:
-                            continue
-                        kind, value = key_info
-                        
-                        if kind == 'NAV':
-                            if value == 'UP':
-                                selected_idx = (selected_idx - 1) % len(items)
-                                self._redraw_multi_select_in_place(items, selected_idx)
-                            elif value == 'DOWN':
-                                selected_idx = (selected_idx + 1) % len(items)
-                                self._redraw_multi_select_in_place(items, selected_idx)
-                            continue
-                        if kind == 'CHAR' and value == ' ':  # Space to toggle
-                            items[selected_idx]['selected'] = not items[selected_idx]['selected']
+                    if kind == 'NAV':
+                        if value == 'UP':
+                            selected_idx = (selected_idx - 1) % len(items)
                             self._redraw_multi_select_in_place(items, selected_idx)
-                            continue
-                        if kind == 'ENTER':
-                            return [item for item in items if item['selected']]
-                        if kind == 'ESC':
-                            return None
-                    else:
-                        choice = input("\nPress SPACE to toggle, Enter to confirm: ").strip()
-                        if choice == '':
-                            return [item for item in items if item['selected']]
+                        elif value == 'DOWN':
+                            selected_idx = (selected_idx + 1) % len(items)
+                            self._redraw_multi_select_in_place(items, selected_idx)
+                        continue
+                    if kind == 'SPACE':  # Space to toggle
+                        items[selected_idx]['selected'] = not items[selected_idx]['selected']
+                        self._redraw_multi_select_in_place(items, selected_idx)
+                        continue
+                    if kind == 'ENTER':
+                        return [item for item in items if item['selected']]
+                    if kind == 'ESC':
+                        return None
                         
                 except KeyboardInterrupt:
                     raise
@@ -502,55 +386,25 @@ class Menu:
                 
                 # Get input
                 try:
-                    if HAS_MSVCRT and os.name == 'nt':
-                        ch = msvcrt.getch()
-                        
-                        if ch == b'\x03':  # Ctrl+C
-                            raise KeyboardInterrupt()
-                        
-                        if ch == b'\xe0':  # Extended key
-                            ch2 = msvcrt.getch()
-                            if ch2 == b'K':  # Left arrow
-                                if selected != 0:
-                                    selected = 0
-                                    self._redraw_yes_no_in_place(selected)
-                                continue
-                            elif ch2 == b'M':  # Right arrow
-                                if selected != 1:
-                                    selected = 1
-                                    self._redraw_yes_no_in_place(selected)
-                                continue
-                        elif ch == b'\r':  # Enter
-                            return selected == 0
-                        elif ch == b'\x1b':  # Escape
-                            return None
+                    key_info = read_key_as_tuple()
+                    if not key_info:
+                        continue
+                    kind, value = key_info
                     
-                    elif HAS_TERMIOS and sys.stdin.isatty():
-                        key_info = self._read_key_posix()
-                        if not key_info:
-                            continue
-                        kind, value = key_info
-                        
-                        if kind == 'NAV':
-                            if value == 'LEFT':
-                                if selected != 0:
-                                    selected = 0
-                                    self._redraw_yes_no_in_place(selected)
-                            elif value == 'RIGHT':
-                                if selected != 1:
-                                    selected = 1
-                                    self._redraw_yes_no_in_place(selected)
-                            continue
-                        if kind == 'ENTER':
-                            return selected == 0
-                        if kind == 'ESC':
-                            return None
-                    else:
-                        choice = input("\nEnter Y/N: ").strip().upper()
-                        if choice == 'Y':
-                            return True
-                        elif choice == 'N':
-                            return False
+                    if kind == 'NAV':
+                        if value == 'LEFT':
+                            if selected != 0:
+                                selected = 0
+                                self._redraw_yes_no_in_place(selected)
+                        elif value == 'RIGHT':
+                            if selected != 1:
+                                selected = 1
+                                self._redraw_yes_no_in_place(selected)
+                        continue
+                    if kind == 'ENTER':
+                        return selected == 0
+                    if kind == 'ESC':
+                        return None
                         
                 except KeyboardInterrupt:
                     raise
@@ -581,76 +435,34 @@ class Menu:
         while True:
             # Get input
             try:
-                # Windows arrow-key handling via msvcrt
-                if HAS_MSVCRT and os.name == 'nt':
-                    ch = msvcrt.getch()
-                    
-                    # Check for Ctrl+C
-                    if ch == b'\x03':
+                key_info = read_key_as_tuple()
+                if not key_info:
+                    continue
+                kind, value = key_info
+                
+                if kind == 'NAV':
+                    if value == 'UP':
+                        selected_idx = (selected_idx - 1) % max_idx
+                    elif value == 'DOWN':
+                        selected_idx = (selected_idx + 1) % max_idx
+                    self._redraw_menu_in_place(selected_idx)
+                    continue
+                if kind == 'ESC':
+                    if self.parent:
+                        return 'back'
+                    else:
                         raise KeyboardInterrupt()
-                    
-                    if ch == b'\xe0':  # Extended key
-                        ch2 = msvcrt.getch()
-                        if ch2 == b'H':  # Up arrow
-                            selected_idx = (selected_idx - 1) % max_idx
-                            # Redraw menu in place
-                            self._redraw_menu_in_place(selected_idx)
-                            continue
-                        elif ch2 == b'P':  # Down arrow
-                            selected_idx = (selected_idx + 1) % max_idx
-                            # Redraw menu in place
-                            self._redraw_menu_in_place(selected_idx)
-                            continue
-                    elif ch == b'\x1b':  # Escape key
-                        if self.parent:
+                if kind == 'ENTER':
+                    return self._index_to_key(selected_idx)
+                if kind == 'DIGIT':
+                    try:
+                        choice_num = int(value)
+                        if 1 <= choice_num <= num_items:
+                            return self._item_order[choice_num - 1]
+                        elif self.parent and choice_num == num_items + 1:
                             return 'back'
-                        else:
-                            raise KeyboardInterrupt()
-                    elif ch == b'\r':  # Enter - return without clearing
-                        return self._index_to_key(selected_idx)
-                    elif ch.isdigit():
-                        choice = ch.decode().strip()
-                        try:
-                            choice_num = int(choice)
-                            if 1 <= choice_num <= num_items:
-                                return self._item_order[choice_num - 1]
-                            elif self.parent and choice_num == num_items + 1:
-                                return 'back'
-                        except ValueError:
-                            pass
-                # POSIX raw terminal handling
-                elif HAS_TERMIOS and sys.stdin.isatty():
-                    key_info = self._read_key_posix()
-                    if not key_info:
+                    except ValueError:
                         continue
-                    kind, value = key_info
-                    if kind == 'NAV':
-                        if value == 'UP':
-                            selected_idx = (selected_idx - 1) % max_idx
-                        elif value == 'DOWN':
-                            selected_idx = (selected_idx + 1) % max_idx
-                        self._redraw_menu_in_place(selected_idx)
-                        continue
-                    if kind == 'ESC':
-                        if self.parent:
-                            return 'back'
-                        else:
-                            raise KeyboardInterrupt()
-                    if kind == 'ENTER':
-                        return self._index_to_key(selected_idx)
-                    if kind == 'DIGIT':
-                        try:
-                            choice_num = int(value)
-                            if 1 <= choice_num <= num_items:
-                                return self._item_order[choice_num - 1]
-                            elif self.parent and choice_num == num_items + 1:
-                                return 'back'
-                        except ValueError:
-                            continue
-                else:
-                    # Generic fallback when raw key handling is unavailable
-                    choice = input("\nEnter your choice: ").strip()
-                    return self._process_choice(choice)
                     
             except KeyboardInterrupt:
                 # Re-raise to allow Ctrl+C to work
