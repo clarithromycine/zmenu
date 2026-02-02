@@ -12,6 +12,7 @@ import sys
 from typing import Any, Dict, List, Optional, Callable
 from menu_system import Menu
 from input_handler import read_key
+from ansi_manager import get_ansi_scheme
 
 
 class FormField:
@@ -156,8 +157,7 @@ class FormSystem:
                 
                 # If optional field and user pressed ENTER, skip
                 if not user_input and not field.required:
-                    # Clear all lines for this field and show the result
-                    import sys
+                    # Clear all lines for this field and show the result                    
                     for _ in range(lines_printed):
                         sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                     print(f"[{field_num}/{total_fields}] {field.label}: (skipped)")
@@ -170,8 +170,7 @@ class FormSystem:
                     lines_printed += 1  # Account for error message
                     continue
                 
-                # Clear all lines for this field and show the result
-                import sys
+                # Clear all lines for this field and show the result                
                 for _ in range(lines_printed):
                     sys.stdout.write('\033[1A\033[2K')  # Move up and clear line
                 result = user_input if user_input else None
@@ -181,99 +180,15 @@ class FormSystem:
             raise
     
     def _hide_cursor(self) -> None:
-        """Hide the cursor using ANSI escape codes."""
-        import sys
+        """Hide the cursor using ANSI escape codes."""        
         sys.stdout.write('\033[?25l')
         sys.stdout.flush()
     
     def _show_cursor(self) -> None:
-        """Show the cursor using ANSI escape codes."""
-        import sys
+        """Show the cursor using ANSI escape codes."""        
         sys.stdout.write('\033[?25h')
         sys.stdout.flush()
     
-    def _get_single_choice(self, field: FormField, field_num: int, total_fields: int) -> Optional[str]:
-        """Get single choice selection from user."""
-        self._hide_cursor()
-        try:
-            print(f"\n[{field_num}/{total_fields}] {field.label}")
-            if field.description:
-                print(f"    {field.description}")
-            print(f"    (Use ↑↓ arrow keys to navigate, ENTER to confirm)")
-            
-            # Check for pre-validation
-            pre_validated_value = self._check_pre_validation(field)
-            if pre_validated_value is not None:
-                # Find the option that matches the pre-validated value
-                matching_option = None
-                for option in field.options:
-                    if option['value'] == pre_validated_value:
-                        matching_option = option
-                        break
-                if matching_option:
-                    print(f"    (pre-filled: {matching_option['label']})")
-                    use_existing = self._confirm_use_existing_value(matching_option['label'])
-                    if use_existing:
-                        return pre_validated_value
-            
-            if not field.options:
-                print("❌ No options available")
-                return None
-            
-            selected_idx = 0
-            
-            try:
-                show_options = True  # 标记是否需要显示选项
-                while True:
-                    # 根据标记决定是否显示选项
-                    if show_options:
-                        print()
-                        
-                        for i, option in enumerate(field.options):
-                            if i == selected_idx:
-                                # 高亮选中的选项
-                                print(f"  ● {option['label']}")
-                            else:
-                                print(f"    {option['label']}")
-                    
-                    # 重置标记，等待按键处理决定是否需要重新显示
-                    show_options = False
-                    
-                    # 获取用户输入
-                    key = self._get_key()
-                    
-                    if key == 'up':
-                        selected_idx = (selected_idx - 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
-                    elif key == 'down':
-                        selected_idx = (selected_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
-                    elif key == 'left' or key == 'right':
-                        # Treat left/right like up/down for single select
-                        if key == 'left':
-                            selected_idx = (selected_idx - 1) % len(field.options)
-                        else:  # key == 'right'
-                            selected_idx = (selected_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 1)
-                        show_options = True  # 需要重新显示选项
-                    elif key == 'enter':
-                        selected_value = field.options[selected_idx]['value']
-                        print(f"✓ Selected: {field.options[selected_idx]['label']}")
-                        return selected_value
-                    elif key == 'esc':
-                        print("⊘ Cancelled")
-                        return None
-                    # 对于无效按键（包括 'space'、'unknown' 等），show_options 保持 False
-                    # 这样下次循环就不会重新显示选项
-            except KeyboardInterrupt:
-                raise
-        finally:
-            self._show_cursor()
     
     def _get_single_choice_dynamic(self, field: FormField, field_num: int, total_fields: int) -> Optional[str]:
         """Get single choice selection from user with dynamic UI updates."""
@@ -342,16 +257,18 @@ class FormSystem:
                     
                     # Get user input
                     key = self._get_key()
+                    ansi = get_ansi_scheme()
                     
                     if key == 'up':
                         selected_idx = (selected_idx - 1) % len(field.options)
                         # Clear previous output and redisplay
-                        self._clear_lines(len(field.options) + 1)
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 1))
+                        #self._clear_lines(len(field.options) + 1)
                         show_options = True  # Need to redisplay options
                     elif key == 'down':
                         selected_idx = (selected_idx + 1) % len(field.options)
                         # Clear previous output and redisplay
-                        self._clear_lines(len(field.options) + 1)
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 1))
                         show_options = True  # Need to redisplay options
                     elif key == 'left' or key == 'right':
                         # Treat left/right like up/down for single select
@@ -360,21 +277,18 @@ class FormSystem:
                         else:  # key == 'right'
                             selected_idx = (selected_idx + 1) % len(field.options)
                         # Clear previous output and redisplay
-                        self._clear_lines(len(field.options) + 1)
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 1))
                         show_options = True  # Need to redisplay options
                     elif key == 'enter':
                         selected_value = field.options[selected_idx]['value']
                         selected_label = field.options[selected_idx]['label']
-                        # Clear all lines for this field and show the result
-                        import sys
-                        for _ in range(lines_printed):
-                            sys.stdout.write('\033[1A\033[2K')
+                        # Clear all lines for this field and show the result                        
+                        self._clear_lines(lines_printed)                        
                         print(f"[{field_num}/{total_fields}] {field.label}: {selected_label}")
                         return selected_value
                     elif key == 'esc':
                         print("⊘ Cancelled")
-                        # Clear all lines for this field
-                        import sys
+                        # Clear all lines for this field                        
                         for _ in range(lines_printed):
                             sys.stdout.write('\033[1A\033[2K')
                         return None
@@ -385,109 +299,6 @@ class FormSystem:
         finally:
             self._show_cursor()
     
-    def _get_multi_choice(self, field: FormField, field_num: int, total_fields: int) -> Optional[List[str]]:
-        """Get multiple choice selections from user."""
-        self._hide_cursor()
-        try:
-            print(f"\n[{field_num}/{total_fields}] {field.label}")
-            if field.description:
-                print(f"    {field.description}")
-            print(f"    (Use ↑↓ arrow keys to navigate, SPACE to toggle, ENTER to confirm)")
-            
-            # Check for pre-validation
-            pre_validated_value = self._check_pre_validation(field)
-            if pre_validated_value is not None and isinstance(pre_validated_value, list):
-                # Find the options that match the pre-validated values
-                matching_options = []
-                for option in field.options:
-                    if option['value'] in pre_validated_value:
-                        matching_options.append(option['label'])
-                
-                if matching_options:
-                    print(f"    (pre-filled: {', '.join(matching_options)})")
-                    use_existing = self._confirm_use_existing_value(', '.join(matching_options))
-                    if use_existing:
-                        return pre_validated_value
-            
-            if not field.options:
-                print("❌ No options available")
-                return None
-            
-            selected_indices = set()
-            current_idx = 0
-            
-            try:
-                show_options = True  # 标记是否需要显示选项
-                while True:
-                    # 根据标记决定是否显示选项
-                    if show_options:
-                        # 显示选项
-                        print()
-                        for i, option in enumerate(field.options):
-                            checkbox = "☑️" if i in selected_indices else "☐"
-                            if i == current_idx:
-                                # 高亮当前选项
-                                print(f"  ► {checkbox} {option['label']}")
-                            else:
-                                print(f"    {checkbox} {option['label']}")
-                        
-                        # 显示已选择数量
-                        selected_count = len(selected_indices)
-                        print(f"\n  已选择: {selected_count} 项")
-                    
-                    # 重置标记，等待按键处理决定是否需要重新显示
-                    show_options = False
-                    
-                    # 获取用户输入
-                    key = self._get_key()
-                    
-                    if key == 'up':
-                        current_idx = (current_idx - 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
-                    elif key == 'down':
-                        current_idx = (current_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
-                    elif key == 'left' or key == 'right':
-                        # Treat left/right like up/down for multi-select navigation
-                        if key == 'left':
-                            current_idx = (current_idx - 1) % len(field.options)
-                        else:  # key == 'right'
-                            current_idx = (current_idx + 1) % len(field.options)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
-                    elif key == 'space':
-                        # 切换选择
-                        if current_idx in selected_indices:
-                            selected_indices.remove(current_idx)
-                        else:
-                            selected_indices.add(current_idx)
-                        # 清除之前的输出，重新显示
-                        self._clear_lines(len(field.options) + 3)
-                        show_options = True  # 需要重新显示选项
-                    elif key == 'enter':
-                        selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
-                        selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
-                        if selected_values:
-                            print(f"\n✓ Selected {len(selected_values)} items:")
-                            for label in selected_labels:
-                                print(f"    • {label}")
-                        else:
-                            print(f"\n✓ No items selected")
-                        return selected_values if selected_values else []
-                    elif key == 'esc':
-                        print("⊘ Cancelled")
-                        return None
-                    # 对于无效按键（包括 'unknown' 等），show_options 保持 False
-                    # 这样下次循环就不会重新显示选项
-            except KeyboardInterrupt:
-                raise
-        finally:
-            self._show_cursor()
     
     def _get_multi_choice_dynamic(self, field: FormField, field_num: int, total_fields: int) -> Optional[List[str]]:
         """Get multiple choice selections from user with dynamic UI updates."""
@@ -538,7 +349,7 @@ class FormSystem:
                         # Display options
                         print()
                         for i, option in enumerate(field.options):
-                            checkbox = "☑️" if i in selected_indices else "☐"
+                            checkbox = "[•]" if i in selected_indices else "[ ]"
                             if i == current_idx:
                                 # Highlight current option
                                 print(f"  ► {checkbox} {option['label']}")
@@ -554,16 +365,19 @@ class FormSystem:
                     
                     # Get user input
                     key = self._get_key()
+
+                    ansi = get_ansi_scheme()
                     
                     if key == 'up':
                         current_idx = (current_idx - 1) % len(field.options)
                         # Clear previous output and redisplay
-                        self._clear_lines(len(field.options) + 3)
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))
+                        #self._clear_lines(len(field.options) + 3)
                         show_options = True  # Need to redisplay options
                     elif key == 'down':
                         current_idx = (current_idx + 1) % len(field.options)
                         # Clear previous output and redisplay
-                        self._clear_lines(len(field.options) + 3)
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))
                         show_options = True  # Need to redisplay options
                     elif key == 'left' or key == 'right':
                         # Treat left/right like up/down for multi-select navigation
@@ -572,7 +386,7 @@ class FormSystem:
                         else:  # key == 'right'
                             current_idx = (current_idx + 1) % len(field.options)
                         # Clear previous output and redisplay
-                        self._clear_lines(len(field.options) + 3)
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))
                         show_options = True  # Need to redisplay options
                     elif key == 'space':
                         # Toggle selection
@@ -581,16 +395,14 @@ class FormSystem:
                         else:
                             selected_indices.add(current_idx)
                         # Clear previous output and redisplay
-                        self._clear_lines(len(field.options) + 3)
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 3))
                         show_options = True  # Need to redisplay options
                     elif key == 'enter':
                         selected_values = [field.options[i]['value'] for i in sorted(selected_indices)]
                         selected_labels = [field.options[i]['label'] for i in sorted(selected_indices)]
                         
-                        # Clear all lines for this field and show the result
-                        import sys
-                        for _ in range(lines_printed):
-                            sys.stdout.write('\033[1A\033[2K')
+                        # Clear all lines for this field and show the result                        
+                        self._clear_lines(lines_printed)
                         
                         # Print the completed field in the desired format
                         if selected_values:
@@ -602,8 +414,7 @@ class FormSystem:
                         return selected_values if selected_values else []
                     elif key == 'esc':
                         print("⊘ Cancelled")
-                        # Clear all lines for this field
-                        import sys
+                        # Clear all lines for this field                        
                         for _ in range(lines_printed):
                             sys.stdout.write('\033[1A\033[2K')
                         return None
@@ -623,8 +434,7 @@ class FormSystem:
         return read_key()
     
     def _clear_lines(self, num_lines: int) -> None:
-        """Clear previous lines from console."""
-        import sys
+        """Clear previous lines from console."""        
         for _ in range(num_lines):
             sys.stdout.write('\033[1A')  # Move cursor up
             sys.stdout.write('\033[K')   # Clear line
