@@ -1,0 +1,114 @@
+{
+  "groups": {
+    "Tools": {
+      "icon": "🛠️",
+      "name": "Tools",
+      "order": 1,
+      "long_desc": "Collection of utility tools"
+    },
+    "nLevel": {
+      "icon": "📁",
+      "name": "N-Level Menu Demo",
+      "order": 2,
+      "long_desc": "Demonstrate nested menu capabilities"
+    },
+    "nLevel.Display": {
+      "icon": "📺",
+      "name": "Display Options",
+      "order": 1,
+      "long_desc": "Customize visual display settings"
+    },
+    "nLevel.Language": {
+      "icon": "🌐",
+      "name": "Language",
+      "order": 2,
+      "long_desc": "Select interface language"
+    }
+  },
+  "items": {
+    "greeting": {
+      "desc": "Say Hello",
+      "order": 0,
+      "icon": "👋",
+      "long_desc": "Display a friendly greeting message"
+    },
+    "calc": {
+      "desc": "Calculator",
+      "order": 0,
+      "group": "Tools",
+      "icon": "🧮",
+      "long_desc": "Perform basic arithmetic operations"
+    },
+    "sysinfo": {
+      "desc": "System Information",
+      "order": 1,
+      "group": "Tools",
+      "icon": "ℹ️",
+      "long_desc": "Display system and environment details"
+    },
+    "theme": {
+      "desc": "Change Theme",
+      "group": "nLevel.Display",
+      "icon": "🎨",
+      "long_desc": "Customize the visual appearance"
+    },
+    "font": {
+      "desc": "Change Font Size",
+      "group": "nLevel.Display",
+      "icon": "🔠",
+      "long_desc": "Adjust text size for better readability"
+    },
+    "en": {
+      "desc": "English",
+      "group": "nLevel.Language",
+      "long_desc": "Set interface language to English"
+    },
+    "es": {
+      "desc": "Español",
+      "group": "nLevel.Language",
+      "long_desc": "Cambiar idioma de interfaz al español"
+    },
+    "fr": {
+      "desc": "Français",
+      "group": "nLevel.Language",
+      "long_desc": "Définir la langue de l'interface au français"
+    },
+    "time": {
+      "desc": "Show Time",
+      "order": 2,
+      "group": "Tools",
+      "icon": "🕐",
+      "long_desc": "Display the current date and time"
+    },
+    "confirm": {
+      "desc": "Confirm Demo",
+      "order": 3,
+      "icon": "✅",
+      "long_desc": "Test the yes/no selection with arrow keys"
+    },
+    "multi": {
+      "desc": "Multi-Select Demo",
+      "order": 5,
+      "icon": "☑️",
+      "long_desc": "Test multi-select with checkboxes"
+    },
+    "form_interactive": {
+      "desc": "Form Interactive Mode",
+      "order": 6,
+      "icon": "📝",
+      "long_desc": "Form with immediate field processing (interactive mode)"
+    },
+    "form_submit": {
+      "desc": "Form Submit Mode",
+      "order": 7,
+      "icon": "📤",
+      "long_desc": "Form with automatic submission (submit mode)"
+    },
+    "form_validation": {
+      "desc": "Form with Pre-Validation",
+      "order": 8,
+      "icon": "🔄",
+      "long_desc": "Form with built-in field validation rules"
+    }
+  }
+}

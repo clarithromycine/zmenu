@@ -15,7 +15,11 @@ class ConsoleApp:
         self.setup_menu()
 
     def setup_menu(self) -> None:
-        """Setup and register all menu items."""
+        """Setup and register all menu items.
+        
+        Menu configuration is loaded from menu_config.json.
+        This method simply collects decorated methods and passes them to register().
+        """
         main_menu = self.main_menu
         
         decorated_methods = []
@@ -24,73 +28,12 @@ class ConsoleApp:
             if hasattr(method, 'cmd'):  
                 decorated_methods.append(method)
         
-        # Pass MENU_GROUP to register method for validation
-        main_menu.register(*decorated_methods, allowed_groups=self.MENU_GROUP)
+        # Load menu configuration from JSON file in this directory
+        config_path = os.path.join(os.path.dirname(__file__), 'menu_config.json')
         
-        # Update group icons and names, and collect group info
-        for group_path, group_config in self.MENU_GROUP.items():
-            icon = group_config.get("icon", "")
-            display_name = group_config.get("name", "")
-            long_desc = group_config.get("long_desc", "")
-            
-            path_parts = group_path.split('.')
-            current_menu = main_menu
-            
-            for i in range(len(path_parts) - 1):
-                submenu_key = '.'.join(path_parts[:i+1])
-                if submenu_key in current_menu.submenus:
-                    current_menu = current_menu.submenus[submenu_key]
-            
-            final_key = path_parts[-1] if len(path_parts) == 1 else '.'.join(path_parts)
-            
-            if final_key in current_menu.items:
-                current_menu.items[final_key].label = f"{icon} {display_name} >"
-                if long_desc:
-                    current_menu.items[final_key].long_desc = long_desc
-        
-        # Re-sort root menu items based on order from MENU_GROUP and MenuItemCmd
-        self._resort_menu(main_menu)
+        # Pass allowed_groups for validation (groups from JSON)
+        main_menu.register(*decorated_methods, allowed_groups=self.MENU_GROUP, config_path=config_path)
 
-    def _resort_menu(self, menu: Menu) -> None:
-        """Re-sort menu items based on MENU_GROUP and MenuItemCmd orders.
-        
-        Sorting priority:
-        1. Items without group and items with group are mixed and sorted by their order
-        2. Items without group use MenuItemCmd order
-        3. Groups use MENU_GROUP order
-        """
-        # Build order map for all items
-        item_order_map = {}
-        
-        # Collect order from decorated methods
-        members = inspect.getmembers(self, predicate=inspect.ismethod)
-        for name, method in members:
-            if hasattr(method, 'cmd'):
-                cmd = getattr(method, 'cmd', None)
-                order = getattr(method, 'order', 0)
-                group = getattr(method, 'group', None)
-                if group is None:
-                    # Root menu items: (order_value, item_key)
-                    item_order_map[cmd] = (order, cmd)
-        
-        # Collect group orders from MENU_GROUP
-        for group_key, group_config in self.MENU_GROUP.items():
-            # Only consider first-level groups (no dot in name)
-            if '.' not in group_key:
-                group_order = group_config.get('order', 999)
-                item_order_map[group_key] = (group_order, group_key)
-        
-        # Sort menu._item_order based on the order value
-        def get_sort_key(key):
-            if key in item_order_map:
-                order_val, item_key = item_order_map[key]
-                return (order_val, item_key)
-            else:
-                # Items not in map go to the end
-                return (999, key)
-        
-        menu._item_order.sort(key=get_sort_key)
-    
     def run(self) -> None:
         self.main_menu.display()
 
@@ -104,13 +47,13 @@ class ConsoleApp:
     }
 
     # Menu item action methods
-    @MenuItemCmd("greeting", "Say Hello", order=0, icon="👋", long_desc="Display a friendly greeting message")
+    @MenuItemCmd("greeting")
     def hello_world(self):
         """Simple hello world action."""
         print("\n👋 Hello from the console app!")
         return True
 
-    @MenuItemCmd("calc", "Calculator", order=0, group="Tools", icon="🧮", long_desc="Perform basic arithmetic operations")
+    @MenuItemCmd("calc")
     def show_calculator(self):
         """Simple calculator demonstration."""
         try:
@@ -131,7 +74,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("sysinfo", "System Information", order=1, group="Tools", icon="ℹ️", long_desc="Display system and environment details")
+    @MenuItemCmd("sysinfo")
     def show_system_info(self):
         """Display system information."""
         print(f"\nOperating System: {sys.platform}")
@@ -139,7 +82,7 @@ class ConsoleApp:
         print(f"Current Directory: {os.getcwd()}")
         return True
 
-    @MenuItemCmd("theme", "Change Theme", group="nLevel.Display", icon="🎨", long_desc="Customize the visual appearance")
+    @MenuItemCmd("theme")
     def show_theme_options(self):
         """Display theme options."""
         print("\n" + "=" * 60)
@@ -152,7 +95,7 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("font", "Change Font Size", group="nLevel.Display", icon="🔠", long_desc="Adjust text size for better readability")
+    @MenuItemCmd("font")
     def show_font_options(self):
         """Display font size options."""
         print("\n" + "=" * 60)
@@ -165,33 +108,33 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("en", "English", group="nLevel.Language", long_desc="Set interface language to English")
+    @MenuItemCmd("en")
     def set_language_en(self):
         """Set language to English."""
         print(f"\n✅ Language changed to: English")
         return True
 
-    @MenuItemCmd("es", "Español", group="nLevel.Language", long_desc="Cambiar idioma de interfaz al español")
+    @MenuItemCmd("es")
     def set_language_es(self):
         """Set language to Español."""
         print(f"\n✅ Language changed to: Español")
         return True
 
-    @MenuItemCmd("fr", "Français", group="nLevel.Language", long_desc="Définir la langue de l'interface au français")
+    @MenuItemCmd("fr")
     def set_language_fr(self):
         """Set language to Français."""
         print(f"\n✅ Language changed to: Français")
         return True
 
 
-    @MenuItemCmd("time", "Show Time", order=2, group="Tools", icon="🕐", long_desc="Display the current date and time")
+    @MenuItemCmd("time")
     def show_time(self):
         """Display current time."""
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"\n  Current time: {current_time}")
         return True
 
-    @MenuItemCmd("confirm", "Confirm Demo", order=3, icon="✅", long_desc="Test the yes/no selection with arrow keys")
+    @MenuItemCmd("confirm")
     def confirm_demo(self):
         """Demonstrate the yes/no prompt with left/right arrow keys."""
         result = self.main_menu.yes_no_prompt(
@@ -208,7 +151,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("multi", "Multi-Select Demo", order=5, icon="☑️", long_desc="Test multi-select with checkboxes")
+    @MenuItemCmd("multi")
     def multi_select_demo(self):
         """Demonstrate the multi-select prompt."""
         try:
@@ -235,7 +178,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form_interactive", "Form Interactive Mode", order=6, icon="📝", long_desc="Form with immediate field processing (interactive mode)")
+    @MenuItemCmd("form_interactive")
     def form_interactive_demo(self):
         """Demonstrate the form system in interactive mode with field callbacks."""
         # Create a handler object with callback methods
@@ -269,7 +212,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form_submit", "Form Submit Mode", order=7, icon="📤", long_desc="Form with automatic submission (submit mode)")
+    @MenuItemCmd("form_submit")
     def form_submit_demo(self):
         """Demonstrate the form system in submit mode."""
         # Initialize FormSystem in submit mode
@@ -305,7 +248,7 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form_with_pre_validation", "Form with Pre-Validation", order=8, icon="🔄", long_desc="Form with pre-validation to suggest existing values")
+    @MenuItemCmd("form_validation")
     def form_pre_validation_demo(self):
         """Demonstrate the form system with pre-validation functionality."""
         # Create handler objects

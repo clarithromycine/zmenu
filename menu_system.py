@@ -6,33 +6,25 @@ A flexible and reusable menu framework supporting nested menus.
 from typing import Callable, Dict, List, Optional, Tuple
 import os
 import sys
+import json
 from ansi_manager import get_ansi_scheme
 from input_handler import read_key_as_tuple
 
 
 
 class MenuItemCmd:
-    """Decorator for defining menu items with metadata."""
+    """Decorator for defining menu items with metadata.
     
-    def __init__(self, cmd: str, desc: str, order: int = 0, label: Optional[str] = None, group: Optional[str] = None, icon: Optional[str] = None, long_desc: Optional[str] = None):
-
-        self.cmd = cmd      #指令
-        self.label = label or desc #界面显示的指令
-        self.desc = desc    #描述
-        self.long_desc = long_desc  #长描述
-        self.order = order  #显示顺序        
-        self.group = group  #分组
-        self.icon = icon    #图标
+    Menu configuration is loaded from menu_config.json.
+    Only cmd parameter is needed here.
+    """
+    
+    def __init__(self, cmd: str):
+        self.cmd = cmd
     
     def __call__(self, fn: Callable) -> Callable:
-
-        fn.cmd   = self.cmd
-        fn.label = self.label
-        fn.desc  = self.desc
-        fn.long_desc = self.long_desc
-        fn.order = self.order        
-        fn.group = self.group
-        fn.icon  = self.icon
+        fn.cmd = self.cmd
+        # Other attributes will be loaded from menu_config.json in Menu.register()
         return fn
 
 class MenuItem:
@@ -101,22 +93,61 @@ class Menu:
         self._item_order.append(key)
         return submenu
     
-    def register(self, *functions: Callable, allowed_groups: Dict = None) -> None:
+    @staticmethod
+    def load_menu_config(config_path: Optional[str] = None) -> Dict:
+        """Load menu configuration from JSON file.
+        
+        Args:
+            config_path: Path to menu_config.json. If None, searches in current directory.
+        
+        Returns:
+            Dictionary with 'groups' and 'items' keys
+        """
+        if config_path is None:
+            config_path = os.path.join(os.path.dirname(__file__), 'menu_config.json')
+        
+        if not os.path.exists(config_path):
+            return {'groups': {}, 'items': {}}
+        
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            return config
+        except Exception as e:
+            print(f"Warning: Failed to load menu config from {config_path}: {e}")
+            return {'groups': {}, 'items': {}}
+    
+    def register(self, *functions: Callable, allowed_groups: Dict = None, config_path: Optional[str] = None) -> None:
         """Register menu items from decorated functions.
+        
+        Menu configuration is loaded from JSON file. Decorator provides only cmd,
+        all other metadata comes from menu_config.json.
         
         Args:
             functions: Functions decorated with @MenuItemCmd
             allowed_groups: Dictionary of allowed groups with their configuration
+            config_path: Path to menu_config.json
         """
+        # Load menu configuration from JSON
+        menu_config = self.load_menu_config(config_path)
+        items_config = menu_config.get('items', {})
+        groups_config = menu_config.get('groups', {})
+        
         # Collect functions with cmd attribute
         items_to_register = []        
         
         for fn in functions:
             if hasattr(fn, 'cmd'):
-                group = getattr(fn, 'group', None)                
-                icon  = getattr(fn, 'icon', None)
-                long_desc = getattr(fn, 'long_desc', None)
-                order = getattr(fn, 'order', 0)
+                cmd = fn.cmd
+                
+                # Get configuration from JSON
+                item_config = items_config.get(cmd, {})
+                desc = item_config.get('desc', cmd)
+                label = desc  # Use desc as label (icon will be added separately)
+                order = item_config.get('order', 0)
+                group = item_config.get('group', None)
+                icon = item_config.get('icon', None)
+                long_desc = item_config.get('long_desc', None)
                 
                 # Validate group if allowed_groups is provided
                 if group is not None:
@@ -124,10 +155,9 @@ class Menu:
                         # Skip items with groups not in allowed_groups
                         continue
                 
-                items_to_register.append((order, fn.cmd, fn.label, fn, group, icon, long_desc))
+                items_to_register.append((order, cmd, label, fn, group, icon, long_desc))
         
-        # Sort items within their groups only (not global sorting)
-        # Group by group name
+        # Categorize items into root and grouped
         grouped_items = {}
         root_items = []
         
@@ -140,18 +170,50 @@ class Menu:
                     grouped_items[group] = []
                 grouped_items[group].append(item)
         
-        # Sort items within each group by order
-        for group in grouped_items:
-            grouped_items[group].sort(key=lambda x: x[0])
-
+        # Build a merged list of root items and first-level groups with their orders
+        menu_entries = []
+        
+        # Add root items to merged list
+        for item in root_items:
+            order, cmd, label, fn, group, icon, long_desc = item
+            menu_entries.append(('item', order, cmd, label, fn, None, icon, long_desc))
+        
+        # Identify first-level groups
+        first_level_groups = {}
+        for item in items_to_register:
+            order, cmd, label, fn, group, icon, long_desc = item
+            if group is not None:
+                first_level_group = group.split('.')[0]
+                if first_level_group not in first_level_groups:
+                    group_order = groups_config.get(first_level_group, {}).get('order', 999)
+                    group_info = groups_config.get(first_level_group, {})
+                    group_icon = group_info.get('icon', '')
+                    group_name = group_info.get('name', first_level_group)
+                    first_level_groups[first_level_group] = (group_order, first_level_group, group_icon, group_name)
+        
+        # Add first-level groups to merged list
+        for group_name, (group_order, key, group_icon, group_name_label) in first_level_groups.items():
+            menu_entries.append(('group', group_order, group_name, group_name_label, None, group_icon, '', None))
+        
+        # Sort merged list by order value
+        menu_entries.sort(key=lambda x: x[1])
+        
         # Track created submenus
         submenus = {}
         
-        # Register root items first (unsorted, will be sorted later in setup_menu)
-        for order, cmd, label, fn, group, icon, long_desc in root_items:
-            self.add_item(cmd, label, fn, icon, long_desc)
+        # Register items in correct order
+        for entry_type, order_val, key, label, fn, group, icon, long_desc in menu_entries:
+            if entry_type == 'item':
+                self.add_item(key, label, fn, icon, long_desc)
+            elif entry_type == 'group':
+                # Create the first-level group submenu
+                menu_label = f"{label} >" if label else key + " >"
+                if icon:
+                    menu_label = f"{icon} {label} >"
+                submenu = self.add_submenu(key, menu_label)
+                submenus[key] = submenu
         
-        # Register grouped items
+        # Register grouped items into their submenus
         for order, cmd, label, fn, group, icon, long_desc in items_to_register:
             if group is not None:
                 # Split group path (e.g., "Tools.Advanced" -> ["Tools", "Advanced"])
@@ -163,8 +225,12 @@ class Menu:
                     submenu_key = '.'.join(group_path[:i+1])
                     
                     if submenu_key not in submenus:
-                        # For intermediate menus, use group_name; for final one, use the actual label
-                        menu_label = group_name + " >" if i < len(group_path) - 1 else group_name + " >"
+                        # Get group info from JSON for proper labeling
+                        group_info = groups_config.get(submenu_key, {})
+                        icon_group = group_info.get('icon', '')
+                        name_group = group_info.get('name', group_name)
+                        
+                        menu_label = (f"{icon_group} {name_group}" if icon_group else name_group) + " >"
                         submenu = current_menu.add_submenu(submenu_key, menu_label)
                         submenus[submenu_key] = submenu
                     else:
