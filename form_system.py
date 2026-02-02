@@ -260,14 +260,11 @@ class FormSystem:
                     ansi = get_ansi_scheme()
                     
                     if key == 'up':
-                        selected_idx = (selected_idx - 1) % len(field.options)
-                        # Clear previous output and redisplay
-                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 1))
-                        #self._clear_lines(len(field.options) + 1)
+                        selected_idx = (selected_idx - 1) % len(field.options)                        
+                        sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 1))                        
                         show_options = True  # Need to redisplay options
                     elif key == 'down':
-                        selected_idx = (selected_idx + 1) % len(field.options)
-                        # Clear previous output and redisplay
+                        selected_idx = (selected_idx + 1) % len(field.options)                        
                         sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 1))
                         show_options = True  # Need to redisplay options
                     elif key == 'left' or key == 'right':
@@ -275,8 +272,7 @@ class FormSystem:
                         if key == 'left':
                             selected_idx = (selected_idx - 1) % len(field.options)
                         else:  # key == 'right'
-                            selected_idx = (selected_idx + 1) % len(field.options)
-                        # Clear previous output and redisplay
+                            selected_idx = (selected_idx + 1) % len(field.options)                        
                         sys.stdout.write(ansi.get_cursor_move('up', len(field.options) + 1))
                         show_options = True  # Need to redisplay options
                     elif key == 'enter':
@@ -289,8 +285,7 @@ class FormSystem:
                     elif key == 'esc':
                         print("⊘ Cancelled")
                         # Clear all lines for this field                        
-                        for _ in range(lines_printed):
-                            sys.stdout.write('\033[1A\033[2K')
+                        self._clear_lines(lines_printed)  
                         return None
                     # For invalid keys (like 'space', 'unknown', etc), show_options remains False
                     # Next loop iteration won't redisplay options
@@ -414,9 +409,8 @@ class FormSystem:
                         return selected_values if selected_values else []
                     elif key == 'esc':
                         print("⊘ Cancelled")
-                        # Clear all lines for this field                        
-                        for _ in range(lines_printed):
-                            sys.stdout.write('\033[1A\033[2K')
+                        # Clear all lines for this field           
+                        self._clear_lines(lines_printed)             
                         return None
                     # 对于无效按键（包括 'unknown' 等），show_options 保持 False
                     # 这样下次循环就不会重新显示选项
