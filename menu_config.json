@@ -4,76 +4,76 @@
       "cmd": "greeting",
       "label": "Say Hello",
       "icon": "👋",
-      "long_desc": "Display a friendly greeting message"
+      "desc": "Display a friendly greeting message"
     },
     {
       "name": "Tools",
       "icon": "🛠️",
-      "long_desc": "Collection of utility tools",
+      "desc": "Collection of utility tools",
       "items": [
         {
           "cmd": "calc",
           "label": "Calculator",
           "icon": "🧮",
-          "long_desc": "Perform basic arithmetic operations"
+          "desc": "Perform basic arithmetic operations"
         },
         {
           "cmd": "sysinfo",
           "label": "System Information",
           "icon": "ℹ️",
-          "long_desc": "Display system and environment details"
+          "desc": "Display system and environment details"
         },
         {
           "cmd": "time",
           "label": "Show Time",
           "icon": "🕐",
-          "long_desc": "Display the current date and time"
+          "desc": "Display the current date and time"
         }
       ]
     },
     {
       "name": "N-Level Menu Demo",
       "icon": "📁",
-      "long_desc": "Demonstrate nested menu capabilities",
+      "desc": "Demonstrate nested menu capabilities",
       "items": [
         {
           "name": "Display Options",
           "icon": "📺",
-          "long_desc": "Customize visual display settings",
+          "desc": "Customize visual display settings",
           "items": [
             {
               "cmd": "theme",
               "label": "Change Theme",
               "icon": "🎨",
-              "long_desc": "Customize the visual appearance"
+              "desc": "Customize the visual appearance"
             },
             {
               "cmd": "font",
               "label": "Change Font Size",
               "icon": "🔠",
-              "long_desc": "Adjust text size for better readability"
+              "desc": "Adjust text size for better readability"
             }
           ]
         },
         {
           "name": "Language",
           "icon": "🌐",
-          "long_desc": "Select interface language",
+          "desc": "Select interface language",
           "items": [
             {
               "cmd": "en",
               "label": "English",
-              "long_desc": "Set interface language to English"
+              "desc": "Set interface language to English"
             },
             {
               "cmd": "es",
               "label": "Español",
-              "long_desc": "Cambiar idioma de interfaz al español"
+              "desc": "Cambiar idioma de interfaz al español"
             },
             {
               "cmd": "fr",
               "label": "Français",
-              "long_desc": "Définir la langue de l'interface au français"
+              "desc": "Définir la langue de l'interface au français"
             }
           ]
         }
@@ -83,31 +83,31 @@
       "cmd": "confirm",
       "label": "Confirm Demo",
       "icon": "✅",
-      "long_desc": "Test the yes/no selection with arrow keys"
+      "desc": "Test the yes/no selection with arrow keys"
     },
     {
       "cmd": "multi",
       "label": "Multi-Select Demo",
       "icon": "☑️",
-      "long_desc": "Test multi-select with checkboxes"
+      "desc": "Test multi-select with checkboxes"
     },
     {
       "cmd": "form_interactive",
       "label": "Form Interactive Mode",
       "icon": "📝",
-      "long_desc": "Form with immediate field processing (interactive mode)"
+      "desc": "Form with immediate field processing (interactive mode)"
     },
     {
       "cmd": "form_submit",
       "label": "Form Submit Mode",
       "icon": "📤",
-      "long_desc": "Form with automatic submission (submit mode)"
+      "desc": "Form with automatic submission (submit mode)"
     },
     {
       "cmd": "form_validation",
       "label": "Form with Pre-Validation",
       "icon": "🔄",
-      "long_desc": "Form with built-in field validation rules"
+      "desc": "Form with built-in field validation rules"
     }
   ]
 }
