@@ -653,7 +653,11 @@ class FormSystem:
         if self.handler and hasattr(self.handler, before_input_name):
             callback_method = getattr(self.handler, before_input_name)
             try:
-                return callback_method(field, self.results)
+                result = callback_method(field, self.results)
+                # Debug: Log successful before_input call
+                if result is not None:
+                    pass  # Successfully got pre-validated value
+                return result
             except Exception as e:
                 print(f"❌ Error in before_input for field '{field.id}': {str(e)}")
                 return None

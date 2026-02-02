@@ -242,15 +242,14 @@ class ConsoleApp:
     @MenuItemCmd("form_validation")
     def form_pre_validation_demo(self):
         """Demonstrate the form system with pre-validation functionality."""
-        # Create handler objects
-        handler = FormFieldHandler()
-        pre_validation_handler = FormPreValidationHandler()
+        # Create a combined handler with both before_input_* and after_input_* methods
+        handler = CombinedFormHandler()
         
-        # Initialize FormSystem in interactive mode with pre-validation
+        # Initialize FormSystem in interactive mode
+        # The handler now includes both before_input_* and after_input_* methods
         form_system = FormSystem(
             mode='interactive', 
-            handler=handler,
-            pre_validation_handler=pre_validation_handler
+            handler=handler
         )
         
         # Load form from JSON file
@@ -264,7 +263,7 @@ class ConsoleApp:
             form_data = form_system.load_form_from_file(form_file)
             form_definition = form_data.get('form', {})
             
-            # Process the form with pre-validation
+            # Process the form with pre-validation and post-processing
             results = form_system.process_form(form_definition)
             
             if results is None:
@@ -392,7 +391,7 @@ class FormPreValidationHandler:
         }
     
     def before_input_name(self, field, current_results):
-        """Suggest value before 'name' field input."""
+        """Suggest value before 'name' field input."""        
         if "name" in self.existing_data:
             return self.existing_data["name"]
         return None
@@ -451,3 +450,15 @@ class FormPreValidationHandler:
         """DEPRECATED: Use before_input_bio instead."""
         return self.before_input_bio(field, current_results)
 
+
+class CombinedFormHandler(FormFieldHandler, FormPreValidationHandler):
+    """Combined handler with both before_input_* and after_input_* methods.
+    
+    Inherits:
+    - before_input_* methods from FormPreValidationHandler (suggest values)
+    - after_input_* methods from FormFieldHandler (process values)
+    
+    This is the recommended pattern for forms that need both pre-validation
+    and post-processing functionality.
+    """
+    pass
