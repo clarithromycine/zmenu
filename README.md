@@ -1,10 +1,10 @@
 # ZMenu - Interactive Console Application Framework
 
-A powerful and flexible Python framework for building interactive console applications with unlimited nested menu levels, decorator-based registration, and a revolutionary **dual-mode form system**.
+A powerful and flexible Python framework for building interactive console applications with unlimited nested menu levels, JSON-based configuration, and a revolutionary **dual-mode form system**.
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
 [![Status](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](./CHANGELOG.md)
 
 ---
 
@@ -12,25 +12,26 @@ A powerful and flexible Python framework for building interactive console applic
 
 ZMenu simplifies building sophisticated console applications with:
 - **Unlimited menu nesting** - Organize complex hierarchies effortlessly
-- **Decorator-based menu items** - Clean, Pythonic syntax with `@MenuItemCmd`
-- **Interactive form system** - Two powerful modes for form processing
+- **JSON-based configuration** - Centralized menu structure, easy to maintain and customize
+- **Decorator-based actions** - Clean, minimal `@MenuItemCmd` decorator syntax
+- **Interactive form system** - Three powerful modes for form processing
 - **Cross-platform support** - Windows and Unix/Linux/macOS compatibility
-- **Professional UI** - Beautiful, user-friendly console interface
+- **Professional UI** - Beautiful, user-friendly console interface with hierarchical display
 
 Perfect for CLI tools, system utilities, admin dashboards, and interactive applications.
 
 ## ✨ Features
 
-- **Multi-level nested menus** - Support for unlimited menu depth with automatic hierarchy
-- **Decorator-based registration** - `@MenuItemCmd` decorators for clean menu item definition
+- **JSON-driven menu hierarchy** - Define menus in `menu_config.json` with unlimited nesting
+- **Hierarchical structure** - Menu items follow display order from JSON configuration
+- **Minimal decorators** - `@MenuItemCmd` only needs command identifier (cmd parameter)
 - **Interactive keyboard navigation** - Arrow keys (↑↓) with automatic menu item updates
 - **Yes/No Selection** - Left/Right arrow keys with real-time updates for boolean choices
 - **Multi-Select Checkboxes** - Up/Down arrow keys with Space to toggle, for multiple selections
-- **Long descriptions** - Display inline descriptions when navigating to menu items
-- **Cross-platform compatibility** - Windows (MSVCRT) and Unix/Linux (termios) native support
+- **Field descriptions** - Display inline descriptions (desc) when navigating menu items
+- **Cross-platform compatibility** - Unified input handling for Windows (MSVCRT) and Unix/Linux (termios)
 - **Smart ESC handling** - Single ESC press exits menu instantly; arrow key sequences work reliably
-- **Group-based organization** - Automatic submenu creation with dot-notation grouping (e.g., "Settings.Display")
-- **Custom group icons** - Map group paths to custom icons and display names
+- **Semantic field naming** - label (display text), desc (description), icon (emoji), cmd (command)
 - **Visual feedback** - Formatted headers, colored selection indicators, and status messages
 - **Clean, elegant UI** - Centered alignment, emoji support, consistent spacing
 - **Error handling** - Input validation and graceful exception handling
@@ -65,15 +66,55 @@ Perfect for CLI tools, system utilities, admin dashboards, and interactive appli
 
 ```
 zmenu/
+├── menu_config.json        # Hierarchical menu structure (JSON) - CENTRALIZED CONFIG
+├── input_handler.py        # Unified cross-platform keyboard input handling
+├── ansi_manager.py         # ANSI color scheme management
 ├── menu_system.py          # Core framework - Menu, MenuItem, MenuItemCmd classes
 ├── form_system.py          # Form system - Interactive, Submit, and Pre-validation modes
-├── console_app.py          # Application logic - Menu item definitions and form handlers
-├── main.py                 # Entry point - Application initialization and setup
+├── console_app.py          # Application logic - Menu item action methods
+├── main.py                 # Entry point - Application initialization
 ├── form_example.json       # Sample form definition for demos
 └── README.md               # This file
 ```
 
-## 🚀 Quick Start
+### Architecture Highlights
+
+**menu_config.json** - JSON-based hierarchical menu structure
+```json
+{
+  "menu": [
+    {
+      "cmd": "greeting",
+      "label": "Say Hello",
+      "icon": "👋",
+      "desc": "Display a friendly greeting message"
+    },
+    {
+      "name": "Tools",
+      "icon": "🛠️",
+      "desc": "Collection of utility tools",
+      "items": [
+        {"cmd": "calc", "label": "Calculator", "icon": "🧮", "desc": "..."}
+      ]
+    }
+  ]
+}
+```
+
+**input_handler.py** - Centralized cross-platform input
+- Unified keyboard handling for Windows (msvcrt) and Unix (termios)
+- Returns simple strings: 'up', 'down', 'left', 'right', 'enter', 'esc'
+- Handles platform-specific code in one place
+
+**Decorator Pattern** - Minimal and clean
+```python
+@MenuItemCmd("cmd_name")
+def action_method(self):
+    return True
+```
+All metadata (label, desc, icon, display order) loaded from menu_config.json
+
+## 🚀 Getting Started
 
 ### Prerequisites
 - Python 3.6 or higher
@@ -84,6 +125,71 @@ zmenu/
 ```bash
 python main.py
 ```
+
+### Creating a Custom Application
+
+#### Step 1: Define Your Menu Structure (menu_config.json)
+
+```json
+{
+  "menu": [
+    {
+      "cmd": "hello",
+      "label": "Say Hello",
+      "icon": "👋",
+      "desc": "Display a greeting"
+    },
+    {
+      "name": "Tools",
+      "icon": "🛠️",
+      "desc": "Utility tools",
+      "items": [
+        {
+          "cmd": "calc",
+          "label": "Calculator",
+          "icon": "🧮",
+          "desc": "Basic arithmetic"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Step 2: Implement Action Methods (console_app.py)
+
+```python
+from menu_system import MenuItemCmd
+
+class ConsoleApp:
+    @MenuItemCmd("hello")
+    def hello_world(self):
+        print("\n👋 Hello from the console app!")
+        return True
+
+    @MenuItemCmd("calc")
+    def show_calculator(self):
+        num1 = float(input("\nEnter first number: "))
+        num2 = float(input("Enter second number: "))
+        print(f"\n  {num1} + {num2} = {num1 + num2}")
+        return True
+```
+
+#### Step 3: Initialize and Run (main.py)
+
+```python
+from console_app import ConsoleApp
+
+app = ConsoleApp("My App")
+app.run()
+```
+
+The framework automatically:
+1. Discovers decorated methods
+2. Loads JSON configuration
+3. Matches cmd values to methods
+4. Builds the menu hierarchy
+5. Displays and manages the menu
 
 ## 🎮 Navigation Guide
 
@@ -123,70 +229,130 @@ ZMenu provides intuitive keyboard controls for form interactions:
 
 ## 🏗️ Architecture
 
-### File Organization
+### JSON-Based Configuration (menu_config.json)
 
-**menu_system.py** - Core Framework
-- `MenuItemCmd` - Decorator class for menu item metadata
-- `MenuItem` - Individual menu item container
-- `Menu` - Menu management with display and navigation
-- `ConsoleApp` - Application controller
+The menu structure is now completely defined in JSON with hierarchical organization:
 
-**console_app.py** - Application Definition
-- `ConsoleApp` - Extended with `MENU_GROUP_ICONS` configuration
-- `@MenuItemCmd` decorated action functions
-- Group-based menu organization
+```json
+{
+  "menu": [
+    {
+      "cmd": "greeting",           # Command ID (links to @MenuItemCmd)
+      "label": "Say Hello",        # Display label in menu
+      "icon": "👋",               # Icon emoji (optional)
+      "desc": "Description text"   # Item description
+    },
+    {
+      "name": "Tools",             # Submenu group name
+      "icon": "🛠️",
+      "desc": "Group description",
+      "items": [                   # Nested items
+        {"cmd": "calc", "label": "Calculator", ...},
+        {"cmd": "sysinfo", "label": "System Info", ...}
+      ]
+    }
+  ]
+}
+```
 
-**main.py** - Entry Point
-- Auto-discovers decorated functions
-- Registers menu items with hierarchy support
-- Applies group icons
-- Starts the application
+**Key Principles:**
+- Menu order follows JSON array order (no sorting logic needed)
+- Supports unlimited nesting levels
+- All metadata centralized and easy to maintain
+- Icons optional (will be omitted if not specified)
 
-### Demo Menu Hierarchy Structure
+### Input Handler (input_handler.py)
+
+Unified cross-platform keyboard input handling:
+- **Windows**: Uses `msvcrt` module
+- **Unix/Linux/macOS**: Uses `termios` and `fcntl`
+- **Interface**: Returns simple strings like 'up', 'down', 'enter', 'esc'
+
+### Decorator Pattern (console_app.py)
+
+Simplified decorator with only command parameter:
+
+```python
+@MenuItemCmd("cmd_name")  # Only parameter needed!
+def action_method(self):
+    """Action implementation"""
+    return True
+```
+
+**How it works:**
+1. Decorator stores `cmd` attribute on method
+2. `setup_menu()` collects all decorated methods
+3. `register()` loads JSON config and matches cmd values
+4. Action methods are passed to menu registration
+
+### Core Registration Flow
 
 ```
-Root Menu (main)
-├── 👋 Say Hello (immediate action)
-├── ✅ Confirm Demo (interactive yes/no selection)
-├── ☑️ Multi-Select Demo (interactive multi-select with checkboxes)
-├── 🧮 Tools (submenu - group="Tools")
-│   ├── 🧮 Calculator (with arithmetic operations)
-│   ├── ℹ️ System Information (display system details)
-│   └── 🕐 Show Time (display current date and time)
-├── 📁 nLevel Menu (submenu - group="Settings")
-│   ├── 📺 Display Options (submenu - group="Settings.Display")
-│   │   ├── 🎨 Change Theme
-│   │   └── 🔠 Change Font Size
-│   └── 🌐 Language (submenu - group="Settings.Language")
-│       ├── English
-│       ├── Español
-│       └── Français
-├── 📝 Form Interactive Mode (form system in interactive mode)
-├── 📤 Form Submit Mode (form system in submit mode)
-└── 🔄 Form with Pre-Validation (form system with pre-validation)
+menu.register(*decorated_methods, config_path="menu_config.json")
+  ↓
+1. Load JSON config (hierarchical structure)
+2. Recursively process items and submenus
+3. Match @MenuItemCmd decorated methods by cmd value
+4. Add items/submenus to Menu object
+5. Display order = JSON array order (no sorting!)
 ```
 
 ## 📖 API Reference
 
-### `@MenuItemCmd` - Menu Item Decorator
+### Configuration Fields (menu_config.json)
 
-Define a menu item with metadata:
+| Field | Type | Required | Purpose |
+|-------|------|----------|---------|
+| **cmd** | string | For actions | Command identifier (links to @MenuItemCmd) |
+| **label** | string | Yes | Display text for menu item |
+| **name** | string | For submenus | Display name for submenu group |
+| **icon** | string | No | Emoji icon (optional) |
+| **desc** | string | No | Item description/help text |
+| **items** | array | For submenus | Array of nested items |
+
+### `@MenuItemCmd` - Minimal Decorator
+
+Define a menu action with only the command identifier:
 
 ```python
-@MenuItemCmd(
-    cmd="unique_key",           # Required: unique identifier
-    desc="Display Label",        # Required: menu label text
-    order=0,                     # Optional: display order (lower first)
-    label="Custom Label",        # Optional: override desc
-    group="GroupName",           # Optional: submenu group (dot-notation supported)
-    icon="🎯"                    # Optional: icon emoji
-)
-def action_function():
-    # Action code
-    return True  # True to keep menu open, False to exit app
+@MenuItemCmd("cmd_name")
+def action_method(self):
+    """Implementation"""
+    return True
 ```
 
-### `Menu.add_item(key, label, action, icon=None)`
+**Parameters:**
+- `cmd` (str): Unique command identifier (must match `cmd` in menu_config.json)
+
+**Return Values:**
+- `True` - Keep menu open, wait for next action
+- `False` - Exit application immediately
+
+**Note:** All other metadata (label, desc, icon) comes from menu_config.json
+
+### `Menu.register(*functions, config_path=None)`
+
+Register decorated action methods and load hierarchical menu structure:
+
+```python
+# Collect decorated methods
+decorated_methods = []
+for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+    if hasattr(method, 'cmd'):
+        decorated_methods.append(method)
+
+# Register with JSON configuration
+menu.register(*decorated_methods, config_path='menu_config.json')
+```
+
+**Process:**
+1. Loads menu_config.json from specified path
+2. Recursively processes hierarchical structure
+3. Matches cmd values to decorated methods
+4. Builds menu following JSON array order
+5. No sorting needed - JSON order is authoritative
+
+### `Menu.add_item(cmd, label, action, icon=None, desc=None)`
 
 Manually add an action item to the menu:
 
@@ -195,57 +361,33 @@ def greet():
     print("Hello!")
     return True
 
-menu.add_item("greet", "👋 Say Hello", greet, icon="👋")
+menu.add_item("greet", "Say Hello", greet, icon="👋", desc="Greeting demo")
 ```
 
 **Parameters:**
-- `key` (str): Unique identifier for the item
+- `cmd` (str): Unique identifier for the item
 - `label` (str): Display text in the menu
 - `action` (callable): Function to execute when selected
 - `icon` (str, optional): Icon emoji prefix
+- `desc` (str, optional): Description text
 
-### `Menu.add_submenu(key, label, icon=None)`
+### `Menu.add_submenu(name, label, icon=None, desc=None)`
 
 Manually add a submenu:
 
 ```python
-tools_menu = menu.add_submenu("tools", "Tools", icon="🛠️")
+tools_menu = menu.add_submenu("tools", "Tools", icon="🛠️", desc="Utility tools")
 tools_menu.add_item("calc", "Calculator", show_calculator)
 ```
 
 **Parameters:**
-- `key` (str): Unique identifier for the submenu
+- `name` (str): Unique identifier for the submenu
 - `label` (str): Display text in the menu
 - `icon` (str, optional): Icon emoji prefix
+- `desc` (str, optional): Submenu description
 
 **Returns:**
 - A new `Menu` object ready for configuration
-
-### `Menu.register(*functions)`
-
-Register all decorated menu item functions:
-
-```python
-# Import decorated functions
-from console_app import hello_world, show_calculator
-
-menu.register(hello_world, show_calculator)
-```
-
-This method:
-- Scans for `@MenuItemCmd` decorators
-- Sorts by order
-- Creates submenus based on `group` parameter
-- Applies group icons if configured
-
-### `ConsoleApp` - Application Controller
-
-```python
-app = ConsoleApp("Application Title")
-menu = app.get_menu()
-menu.register(*decorated_functions)
-app.run()
-```
 
 ### `FormSystem` - Form System with Three Modes
 
@@ -423,69 +565,168 @@ app.run()
 
 ## 🔑 Key Concepts
 
-### Order Parameter
-Controls display sequence (lower numbers appear first):
-```python
-@MenuItemCmd("first", "First Item", order=1)
-@MenuItemCmd("second", "Second Item", order=2)
-@MenuItemCmd("third", "Third Item", order=3)
+### JSON Hierarchy Rules
+
+1. **Root items** - Direct children of `"menu"` array
+2. **Submenus** - Items with `"name"` and `"items"` properties
+3. **Actions** - Items with `"cmd"` property
+4. **Display order** - Follows JSON array order (no sorting needed)
+5. **Unlimited nesting** - Each submenu can have submenus
+
+Example:
+```json
+{
+  "menu": [
+    {"cmd": "action1", "label": "Action 1"},     // Direct action
+    {
+      "name": "Group",
+      "items": [
+        {"cmd": "action2", "label": "Action 2"},  // Submenu action
+        {
+          "name": "Subgroup",
+          "items": [
+            {"cmd": "action3", "label": "Action 3"} // Nested action
+          ]
+        }
+      ]
+    }
+  ]
+}
 ```
 
-### Group Parameter
-Creates hierarchical submenus using dot notation:
+### Field Naming Clarity
+
+| Field | Purpose | Example |
+|-------|---------|---------|
+| **cmd** | Command identifier | `"greeting"` |
+| **label** | Display text | `"Say Hello"` |
+| **desc** | Description/help | `"Display a greeting message"` |
+| **icon** | Visual emoji | `"👋"` |
+| **name** | Submenu group name | `"Tools"` |
+| **items** | Child menu items | `[{...}, {...}]` |
+
+### Return Values in Actions
+
 ```python
-@MenuItemCmd("display", "Display", group="Settings")           # Submenu of Settings
-@MenuItemCmd("theme", "Theme", group="Settings.Display")       # Sub-submenu
-@MenuItemCmd("darkmode", "Dark Mode", group="Settings.Display") # Same level as theme
+@MenuItemCmd("my_action")
+def my_action(self):
+    # ... do something ...
+    return True   # Keep menu open
+    # return False  # Exit application
 ```
 
-### Return Values
-- **`True`** - Keep menu open (wait for next user action)
-- **`False`** - Exit application immediately
+### Error Handling
 
-### Icon Usage
-- Use emoji for visual appeal: 👋, 🛠️, ⚙️, 📖, ❓
-- Icons are automatically prefixed to labels
-- Group icons override item icons
+```python
+@MenuItemCmd("risky_action")
+def risky_action(self):
+    try:
+        # Perform action
+        result = dangerous_operation()
+        return True  # Keep menu open on success
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return True  # Keep menu open on error
+```
 
 ## 🎯 Best Practices
 
-### 1. Use Decorators for All Menu Items
+### 1. Structure Your menu_config.json Logically
+
+```json
+{
+  "menu": [
+    {"cmd": "main_action", "label": "Main Action"},
+    {
+      "name": "Utilities",
+      "icon": "🛠️",
+      "items": [
+        {"cmd": "util1", "label": "Utility 1"},
+        {"cmd": "util2", "label": "Utility 2"}
+      ]
+    },
+    {"cmd": "exit", "label": "Exit"}
+  ]
+}
+```
+
+### 2. Keep Decorators Minimal
+
 ```python
-@MenuItemCmd("key", "Label", order=0)
-def my_action():
+# Good ✓
+@MenuItemCmd("my_action")
+def my_action(self):
     return True
+
+# Avoid ✗ (use JSON instead)
+# @MenuItemCmd("my_action", label="...", desc="...", icon="...", order=1)
 ```
 
-### 2. Organize with Groups
-```python
-@MenuItemCmd("a", "Item A", group="Category")
-@MenuItemCmd("b", "Item B", group="Category")
+### 3. Use Descriptive Labels and Descriptions
+
+```json
+{
+  "cmd": "backup",
+  "label": "Create Backup",
+  "desc": "Backup all user data to external drive",
+  "icon": "💾"
+}
 ```
 
-### 3. Handle Errors Gracefully
+### 4. Organize Menus Hierarchically
+
+```json
+{
+  "name": "Settings",
+  "items": [
+    {
+      "name": "Display",
+      "items": [
+        {"cmd": "theme", "label": "Theme"},
+        {"cmd": "font", "label": "Font Size"}
+      ]
+    },
+    {
+      "name": "Language",
+      "items": [
+        {"cmd": "en", "label": "English"},
+        {"cmd": "es", "label": "Español"}
+      ]
+    }
+  ]
+}
+```
+
+### 5. Handle Errors Gracefully
+
 ```python
-@MenuItemCmd("user_input", "Get Input")
-def get_user_input():
+@MenuItemCmd("user_input")
+def get_user_input(self):
     try:
         value = input("Enter value: ")
-        # Process value
+        self.process_value(value)
+        print("✓ Value processed successfully")
         return True
+    except ValueError as e:
+        print(f"❌ Invalid input: {e}")
+        return True  # Stay in menu to retry
     except Exception as e:
-        print(f"Error: {e}")
-        return True  # Stay in menu
+        print(f"❌ Unexpected error: {e}")
+        return True
 ```
 
-### 4. Use Consistent Ordering
-```python
-# Root level
-@MenuItemCmd("a", "First", order=1)
-@MenuItemCmd("b", "Second", order=2)
-@MenuItemCmd("c", "Exit", order=99)
+### 6. Use Icons Consistently
 
-# In groups
-@MenuItemCmd("x", "Item X", group="Tools", order=1)
-@MenuItemCmd("y", "Item Y", group="Tools", order=2)
+```json
+{
+  "menu": [
+    {"cmd": "info", "label": "Information", "icon": "ℹ️"},
+    {"cmd": "settings", "label": "Settings", "icon": "⚙️"},
+    {"cmd": "tools", "label": "Tools", "icon": "🛠️"},
+    {"cmd": "help", "label": "Help", "icon": "❓"},
+    {"cmd": "exit", "label": "Exit", "icon": "❌"}
+  ]
+}
 ```
 
 ## 🎯 Interactive Prompts
