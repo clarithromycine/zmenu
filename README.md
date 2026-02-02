@@ -1,18 +1,73 @@
 ﻿# ZMenu - Interactive Console Application Framework
 
-A Python framework for building interactive console applications with nested menus, JSON configuration, and form processing.
+A Python framework for building interactive console applications with nested menus, parameter collection, form processing, and JSON configuration.
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](./CHANGELOG.md)
 
 ## Features
 
 - **JSON-based menus** - Hierarchical menu structure from `menu_config.json`
-- **Minimal decorators** - `@MenuItemCmd("cmd")` with all metadata in JSON
+- **Parameter system** - `params` (required) and `options` (optional) for menu actions
+- **Minimal decorators** - `@MenuItemCmd("cmd", params=[], options=[])` configuration
 - **Keyboard navigation** - Arrow keys, Enter, ESC, number keys
-- **Unified form system** - `before_input_*` and `after_input_*` handlers
+- **Unified form system** - Interactive form processing with field handlers
 - **Cross-platform** - Works on Windows, Linux, macOS
 - **Professional UI** - Colored output, emoji support, dynamic updates
+
+## Menu Item Parameters
+
+Menu actions support two types of parameters:
+
+### Required Parameters (`params`)
+These are collected from the user before action execution:
+
+```python
+@MenuItemCmd(
+    "calc",
+    params=[
+        {'name': 'num1', 'type': 'number', 'description': 'First number'},
+        {'name': 'num2', 'type': 'number', 'description': 'Second number'},
+    ]
+)
+def show_calculator(self, params, options):
+    num1 = float(params.get('num1', 0))
+    num2 = float(params.get('num2', 0))
+    return True
+```
+
+### Optional Parameters (`options`)
+Collected using command-line style syntax: `--key1 value1 --key2 value2`
+
+```python
+@MenuItemCmd(
+    "calc",
+    options=[
+        {'name': 'operation', 'type': 'choice', 'choices': ['add', 'subtract', 'multiply', 'divide']},
+        {'name': 'text', 'type': 'string', 'description': 'a string text'},
+    ]
+)
+def show_calculator(self, params, options):
+    operation = options.get('operation', 'add')  # Default if not provided
+    text = options.get('text', 'no value')
+    return True
+```
+
+**Parameter Types:**
+- `text` - Plain text input
+- `number` - Numeric input (validated)
+- `choice` - Single selection from list
+- `string` - String input (for options only)
+- `bool` - Boolean flag (for options only)
+
+**Options Input Format:**
+```
+--operation multiply --text "hello world"
+```
+
+Supports quoted strings with spaces and escape sequences:
+- `\"` for literal double quote
+- `\\` for literal backslash
 
 ## Form System
 
@@ -41,8 +96,7 @@ class FormHandler:
 ```
 zmenu/
 ├── menu_config.json       # Menu structure (JSON)
-├── input_handler.py       # Cross-platform keyboard input
-├── menu_system.py         # Menu framework
+├── menu_system.py         # Menu framework & parameter collection
 ├── form_system.py         # Form system
 ├── console_app.py         # Application actions
 ├── main.py                # Entry point
@@ -79,13 +133,25 @@ from menu_system import MenuItemCmd
 
 class ConsoleApp:
     @MenuItemCmd("hello")
-    def hello(self):
+    def hello(self, params, options):
         print("\nHello!")
         return True
     
-    @MenuItemCmd("calc")
-    def calc(self):
-        print(f"\n2+2={2+2}")
+    @MenuItemCmd(
+        "calc",
+        params=[
+            {'name': 'num1', 'type': 'number', 'description': 'First number'},
+            {'name': 'num2', 'type': 'number', 'description': 'Second number'},
+        ],
+        options=[
+            {'name': 'operation', 'type': 'choice', 'choices': ['add', 'subtract', 'multiply', 'divide']},
+        ]
+    )
+    def calc(self, params, options):
+        num1 = float(params.get('num1', 0))
+        num2 = float(params.get('num2', 0))
+        operation = options.get('operation', 'add')
+        print(f"\n{num1} {operation} {num2}")
         return True
 ```
 
@@ -163,17 +229,56 @@ def action_method(self):
 | **desc** | No | Help text |
 | **items** | For submenus | Nested items |
 
-### `@MenuItemCmd(cmd)`
+### `@MenuItemCmd(cmd, params=[], options=[])`
 
-Simple decorator for menu actions:
+Decorator for menu actions with optional parameter definitions:
 
 ```python
-@MenuItemCmd("hello")
-def hello(self):
+@MenuItemCmd(
+    "hello",
+    params=[
+        {'name': 'name', 'type': 'text', 'description': 'Your name', 'validation_rule': 'required'}
+    ],
+    options=[
+        {'name': 'greeting', 'type': 'choice', 'choices': ['Hi', 'Hello', 'Hey']}
+    ]
+)
+def hello(self, params, options):
+    name = params.get('name', '')
+    greeting = options.get('greeting', 'Hello')
+    print(f"{greeting}, {name}!")
     return True  # Keep menu open
 ```
 
+**Parameters:**
+- `cmd` (str): Unique command identifier
+- `params` (list): Required parameters collected before action execution
+- `options` (list): Optional parameters collected via CLI-style syntax
+
 Return `False` to exit the application.
+
+### Parameter Definition
+
+**Required Parameters (`params`) Definition:**
+```python
+{
+    'name': 'field_id',           # Unique identifier
+    'type': 'text|number|choice', # Field type
+    'description': 'Help text',   # Shown to user
+    'validation_rule': 'required',# Optional: required, min_length:N, max_length:N, range:MIN-MAX
+    'default': 'default_value'    # Optional: default value
+}
+```
+
+**Optional Parameters (`options`) Definition:**
+```python
+{
+    'name': 'field_id',                # Unique identifier
+    'type': 'choice|string|bool',      # Field type (string/bool for options only)
+    'description': 'Help text',        # Optional: help text
+    'choices': ['option1', 'option2']  # Required for choice type
+}
+```
 
 ### `Menu.register(*functions, config_path="menu_config.json")`
 
