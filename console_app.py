@@ -31,6 +31,7 @@ class ConsoleApp:
         for group_path, group_config in self.MENU_GROUP.items():
             icon = group_config.get("icon", "")
             display_name = group_config.get("name", "")
+            long_desc = group_config.get("long_desc", "")
             
             path_parts = group_path.split('.')
             current_menu = main_menu
@@ -44,6 +45,8 @@ class ConsoleApp:
             
             if final_key in current_menu.items:
                 current_menu.items[final_key].label = f"{icon} {display_name} >"
+                if long_desc:
+                    current_menu.items[final_key].long_desc = long_desc
         
         # Re-sort root menu items based on order from MENU_GROUP and MenuItemCmd
         self._resort_menu(main_menu)
@@ -94,10 +97,10 @@ class ConsoleApp:
     # Group configuration for visual customization and ordering
     # Only groups defined here will be displayed
     MENU_GROUP = {
-        "Tools":                  {"icon": "🛠️", "name": "Tools", "order": 1},
-        "nLevel":                 {"icon": "📁", "name": "N-Level Menu Demo", "order": 2},
-        "nLevel.Display":         {"icon": "📺", "name": "Display Options", "order": 1},
-        "nLevel.Language":        {"icon": "🌐", "name": "Language", "order": 2}
+        "Tools":                  {"icon": "🛠️", "name": "Tools", "order": 1, "long_desc": "Collection of utility tools"},
+        "nLevel":                 {"icon": "📁", "name": "N-Level Menu Demo", "order": 2, "long_desc": "Demonstrate nested menu capabilities"},
+        "nLevel.Display":         {"icon": "📺", "name": "Display Options", "order": 1, "long_desc": "Customize visual display settings"},
+        "nLevel.Language":        {"icon": "🌐", "name": "Language", "order": 2, "long_desc": "Select interface language"}
     }
 
     # Menu item action methods
