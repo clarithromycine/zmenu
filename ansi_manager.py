@@ -1,0 +1,259 @@
+"""
+ANSI Escape Code Manager for Console Applications
+Centralized ANSI escape code and formatting control.
+"""
+import json
+import os
+from typing import Dict, Optional
+
+
+class AnsiScheme:
+    """Manages ANSI escape codes for console formatting."""
+    
+    def __init__(self, config_file: Optional[str] = None):
+        """Initialize AnsiScheme with configuration.
+        
+        Args:
+            config_file: Path to ansi_scheme.json. If None, searches in standard locations.
+        """
+        self.config = {}
+        self._load_config(config_file)
+    
+    def _load_config(self, config_file: Optional[str] = None) -> None:
+        """Load ANSI scheme configuration from JSON file.
+        
+        Args:
+            config_file: Path to configuration file
+        """
+        if config_file is None:
+            # Try to find ansi_scheme.json in common locations
+            possible_paths = [
+                os.path.join(os.path.dirname(__file__), 'ansi_scheme.json'),
+                'ansi_scheme.json',
+                os.path.expanduser('~/.zmenu/ansi_scheme.json'),
+            ]
+            
+            for path in possible_paths:
+                if os.path.exists(path):
+                    config_file = path
+                    break
+        
+        if config_file and os.path.exists(config_file):
+            try:
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    self.config = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Warning: Failed to load ANSI scheme from {config_file}: {e}")
+                self._set_defaults()
+        else:
+            self._set_defaults()
+    
+    def _set_defaults(self) -> None:
+        """Set default ANSI scheme configuration."""
+        self.config = {
+            "theme": {
+                "primary": "orange",
+                "secondary": "gray",
+                "error": "red"
+            },
+            "reset": {"code": "\033[0m", "name": "reset"},
+            "colors": {
+                "orange": {"code": "\033[38;5;208m", "name": "orange"},
+                "gray": {"code": "\033[90m", "name": "gray"},
+                "red": {"code": "\033[38;5;196m", "name": "red"}
+            },
+            "cursor": {
+                "hide": "\033[?25l",
+                "show": "\033[?25h"
+            },
+            "cursor_movement": {
+                "up": "\033[A",
+                "down": "\033[B",
+                "right": "\033[C",
+                "left": "\033[D"
+            },
+            "screen": {
+                "clear_line": "\033[2K",
+                "clear_to_end": "\033[0J"
+            }
+        }
+    
+    def get_color(self, color_name: str) -> str:
+        """Get ANSI code for a color.
+        
+        Args:
+            color_name: Name of the color (e.g., 'orange', 'red', 'green')
+        
+        Returns:
+            ANSI escape code
+        """
+        if color_name in self.config.get('colors', {}):
+            return self.config['colors'][color_name]['code']
+        return ""
+    
+    def get_theme_color(self, role: str) -> str:
+        """Get ANSI code for a theme color role.
+        
+        Args:
+            role: Theme role ('primary', 'secondary', 'error')
+        
+        Returns:
+            ANSI escape code
+        """
+        if role in self.config.get('theme', {}):
+            color_name = self.config['theme'][role]
+            return self.get_color(color_name)
+        return ""
+    
+    def get_reset(self) -> str:
+        """Get ANSI code for reset (clear all formatting).
+        
+        Returns:
+            ANSI escape code
+        """
+        reset_config = self.config.get('reset', {})
+        if isinstance(reset_config, dict):
+            return reset_config.get('code', "\033[0m")
+        return "\033[0m"
+    
+    def get_cursor(self, action: str) -> str:
+        """Get ANSI code for cursor operation.
+        
+        Args:
+            action: Action ('hide', 'show')
+        
+        Returns:
+            ANSI escape code
+        """
+        if action in self.config.get('cursor', {}):
+            return self.config['cursor'][action]
+        return ""
+    
+    def get_cursor_move(self, direction: str, lines: int = 1) -> str:
+        """Get ANSI code for cursor movement.
+        
+        Args:
+            direction: Direction ('up', 'down', 'left', 'right')
+            lines: Number of lines to move
+        
+        Returns:
+            ANSI escape code
+        """
+        base_code = self.config.get('cursor_movement', {}).get(direction, '\033[A')
+        return f"\033[{lines}{base_code[-1]}"
+    
+    def get_screen(self, action: str) -> str:
+        """Get ANSI code for screen operation.
+        
+        Args:
+            action: Action ('clear_line', 'clear_to_end')
+        
+        Returns:
+            ANSI escape code
+        """
+        if action in self.config.get('screen', {}):
+            return self.config['screen'][action]
+        return ""
+    
+    def colorize(self, text: str, color: str = 'primary') -> str:
+        """Apply color to text.
+        
+        Args:
+            text: Text to colorize
+            color: Color to apply
+        
+        Returns:
+            Colorized text with reset code
+        """
+        color_code = self.get_color(color)
+        reset_code = self.get_reset()
+        if color_code:
+            return f"{color_code}{text}{reset_code}"
+        return text
+    
+    def get_highlight_item(self, label: str, long_desc: Optional[str] = None) -> str:
+        """Format a highlighted menu item.
+        
+        Args:
+            label: Item label
+            long_desc: Optional long description
+        
+        Returns:
+            Formatted highlighted item string
+        """
+        desc_text = ""
+        if long_desc:
+            secondary_code = self.get_color('secondary')
+            reset_code = self.get_reset()
+            desc_text = f" {secondary_code}({long_desc}){reset_code}"
+        
+        primary_code = self.get_color('primary')
+        reset_code = self.get_reset()
+        return f"  {primary_code}➤ {label}{desc_text} {reset_code}"
+    
+    def get_checkbox_item(self, checked: bool, label: str, highlighted: bool = False) -> str:
+        """Format a checkbox item.
+        
+        Args:
+            checked: Whether checkbox is checked
+            label: Item label
+            highlighted: Whether item is highlighted
+        
+        Returns:
+            Formatted checkbox item string
+        """
+        checkbox = "[•]" if checked else "[ ]"
+        
+        if highlighted:
+            primary_code = self.get_color('primary')
+            reset_code = self.get_reset()
+            return f"{primary_code}  {checkbox} {label}{reset_code}"
+        else:
+            return f"  {checkbox} {label}"
+    
+    def get_yes_no_text(self, selected_index: int) -> str:
+        """Format yes/no selection text.
+        
+        Args:
+            selected_index: 0 for YES, 1 for NO
+        
+        Returns:
+            Formatted yes/no text
+        """
+        primary_code = self.get_color('primary')
+        reset_code = self.get_reset()
+        
+        yes_text = f"{primary_code}➤ YES{reset_code}" if selected_index == 0 else "  YES"
+        no_text = f"{primary_code}➤ NO{reset_code}" if selected_index == 1 else "  NO"
+        
+        return f"  {yes_text} / {no_text}"
+
+
+# Global ANSI scheme instance
+_ansi_scheme = None
+
+
+def get_ansi_scheme() -> AnsiScheme:
+    """Get or create the global ANSI scheme instance.
+    
+    Returns:
+        AnsiScheme instance
+    """
+    global _ansi_scheme
+    if _ansi_scheme is None:
+        _ansi_scheme = AnsiScheme()
+    return _ansi_scheme
+
+
+def initialize_ansi_scheme(config_file: Optional[str] = None) -> AnsiScheme:
+    """Initialize the global ANSI scheme with optional config file.
+    
+    Args:
+        config_file: Path to ansi_scheme.json
+    
+    Returns:
+        AnsiScheme instance
+    """
+    global _ansi_scheme
+    _ansi_scheme = AnsiScheme(config_file)
+    return _ansi_scheme

@@ -32,11 +32,11 @@
         "description": "Please select your country",
         "required": true,
         "options": [
-          { "value": "cn", "label": "🇨🇳 China" },
-          { "value": "us", "label": "🇺🇸 United States" },
-          { "value": "uk", "label": "🇬🇧 United Kingdom" },
-          { "value": "jp", "label": "🇯🇵 Japan" },
-          { "value": "sg", "label": "🇸🇬 Singapore" }
+          { "value": "cn", "label": "China" },
+          { "value": "us", "label": "United States" },
+          { "value": "uk", "label": "United Kingdom" },
+          { "value": "jp", "label": "Japan" },
+          { "value": "sg", "label": "Singapore" }
         ]
       },
       {

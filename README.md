@@ -1,554 +1,413 @@
-# ZMenu - Interactive Console Application Framework
+﻿# ZMenu - Interactive Console Application Framework
 
-A powerful and flexible Python framework for building interactive console applications with unlimited nested menu levels, decorator-based registration, and a revolutionary **dual-mode form system**.
+A Python framework for building interactive console applications with nested menus, parameter collection, form processing, and JSON-based configuration.
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
-[![Status](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](./CHANGELOG.md)
 
----
+## Features
 
-## 🎯 Overview
+- **JSON-based Menu Structure** - Hierarchical menus defined in `menu_config.json`
+- **Parameter Collection System**
+  - `params`: Required parameters collected via form
+  - `options`: Optional parameters via CLI-style syntax (`--key value`)
+- **Minimal Decorators** - Simple `@MenuItemCmd` with metadata
+- **Keyboard Navigation** - Arrow keys, Enter, ESC, number keys
+- **Unified Form System** - Interactive form processing with field handlers
+- **Cross-platform** - Windows, Linux, macOS support
+- **Rich UI** - Colored output, emoji support, dynamic updates
 
-ZMenu simplifies building sophisticated console applications with:
-- **Unlimited menu nesting** - Organize complex hierarchies effortlessly
-- **Decorator-based menu items** - Clean, Pythonic syntax with `@MenuItemCmd`
-- **Interactive form system** - Two powerful modes for form processing
-- **Cross-platform support** - Windows and Unix/Linux/macOS compatibility
-- **Professional UI** - Beautiful, user-friendly console interface
-
-Perfect for CLI tools, system utilities, admin dashboards, and interactive applications.
-
-## ✨ Features
-
-- **Multi-level nested menus** - Support for unlimited menu depth with automatic hierarchy
-- **Decorator-based registration** - `@MenuItemCmd` decorators for clean menu item definition
-- **Interactive keyboard navigation** - Arrow keys (↑↓) with automatic menu item updates
-- **Yes/No Selection** - Left/Right arrow keys with real-time updates for boolean choices
-- **Multi-Select Checkboxes** - Up/Down arrow keys with Space to toggle, for multiple selections
-- **Long descriptions** - Display inline descriptions when navigating to menu items
-- **Cross-platform compatibility** - Windows (MSVCRT) and Unix/Linux (termios) native support
-- **Smart ESC handling** - Single ESC press exits menu instantly; arrow key sequences work reliably
-- **Group-based organization** - Automatic submenu creation with dot-notation grouping (e.g., "Settings.Display")
-- **Custom group icons** - Map group paths to custom icons and display names
-- **Visual feedback** - Formatted headers, colored selection indicators, and status messages
-- **Clean, elegant UI** - Centered alignment, emoji support, consistent spacing
-- **Error handling** - Input validation and graceful exception handling
-- **Callable actions** - Execute any Python function when a menu item is selected
-- **Automatic "Back" option** - Seamless navigation to parent menus
-
-## 📝 Form System (NEW - v2.0)
-
-**Dual-mode form system** with three powerful approaches:
-
-### Interactive Mode 🔄
-- Process each field with immediate callbacks
-- Real-time validation and data transformation
-- Perfect for complex workflows and database operations
-- Handler pattern: `on_field_<field_id>(value, field)`
-
-### Pre-Validation Mode 🔄 (NEW!)
-- Check for existing values before prompting user input
-- Suggest default values based on previously stored data
-- Allow users to confirm or override existing values
-- Handler pattern: `pre_validate_<field_id>(field, current_results)`
-
-### Submit Mode 📤
-- Batch collection and unified submission
-- Automatic API endpoint integration
-- Perfect for REST APIs and simple submissions
-- Clean, atomic validation
-
-**See:** [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md) - Keyboard controls and interaction guide
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 zmenu/
-├── menu_system.py          # Core framework - Menu, MenuItem, MenuItemCmd classes
-├── form_system.py          # Form system - Interactive, Submit, and Pre-validation modes
-├── console_app.py          # Application logic - Menu item definitions and form handlers
-├── main.py                 # Entry point - Application initialization and setup
-├── form_example.json       # Sample form definition for demos
-└── README.md               # This file
+├── menu_config.json         # Menu structure in JSON
+├── menu_system.py           # Menu framework & parameter collection
+├── form_system.py           # Form system for data collection
+├── input_handler.py         # Keyboard input handling
+├── ansi_manager.py          # ANSI color and formatting
+├── console_app.py           # Application actions
+├── main.py                  # Entry point
+└── README.md                # This file
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
-- Python 3.6 or higher
-- No external dependencies required
+- Python 3.6+
+- No external dependencies
 
-### Running the Example Application
+### Run the Example
 
 ```bash
 python main.py
 ```
 
-## 🎮 Navigation Guide
+## How It Works
 
-| Control | Action |
-|---------|--------|
-| **Arrow Keys ↑ ↓** | Move between menu items (0.5s timeout for arrow key sequences) |
-| **Number Keys (1-9)** | Jump directly to a menu item |
-| **Enter** | Select the highlighted menu item |
-| **ESC** | Return to parent menu (or exit if at root) |
-| **Ctrl+C** | Force exit from any menu |
+### 1. Menu Structure (menu_config.json)
 
-## ⌨️ Keyboard Controls in Forms
+Define your menu hierarchy as JSON:
 
-ZMenu provides intuitive keyboard controls for form interactions:
-
-### Choice Fields (Single/Multi Selection)
-
-| Control | Action |
-|---------|--------|
-| **↑ ↓ Arrow Keys** | Navigate between options |
-| **← → Arrow Keys** | Navigate between options (alternative to ↑ ↓) |
-| **Enter** | Confirm selection and proceed |
-| **ESC** | Cancel selection |
-| **Space** | Toggle selection (multi-choice only) |
-| **Other Keys** | Ignored (no interface refresh) |
-
-**Important:** Invalid keys (letters, numbers, etc.) are silently ignored and do not cause interface refresh, ensuring smooth user experience.
-
-### Text Input Fields
-
-| Control | Action |
-|---------|--------|
-| **Type normally** | Enter text as usual |
-| **Enter** | Submit text input |
-| **Backspace/Delete** | Edit text as standard |
-| **ESC** | Cancel input (when supported) |
-
-## 🏗️ Architecture
-
-### File Organization
-
-**menu_system.py** - Core Framework
-- `MenuItemCmd` - Decorator class for menu item metadata
-- `MenuItem` - Individual menu item container
-- `Menu` - Menu management with display and navigation
-- `ConsoleApp` - Application controller
-
-**console_app.py** - Application Definition
-- `ConsoleApp` - Extended with `MENU_GROUP_ICONS` configuration
-- `@MenuItemCmd` decorated action functions
-- Group-based menu organization
-
-**main.py** - Entry Point
-- Auto-discovers decorated functions
-- Registers menu items with hierarchy support
-- Applies group icons
-- Starts the application
-
-### Demo Menu Hierarchy Structure
-
-```
-Root Menu (main)
-├── 👋 Say Hello (immediate action)
-├── ✅ Confirm Demo (interactive yes/no selection)
-├── ☑️ Multi-Select Demo (interactive multi-select with checkboxes)
-├── 🧮 Tools (submenu - group="Tools")
-│   ├── 🧮 Calculator (with arithmetic operations)
-│   ├── ℹ️ System Information (display system details)
-│   └── 🕐 Show Time (display current date and time)
-├── 📁 nLevel Menu (submenu - group="Settings")
-│   ├── 📺 Display Options (submenu - group="Settings.Display")
-│   │   ├── 🎨 Change Theme
-│   │   └── 🔠 Change Font Size
-│   └── 🌐 Language (submenu - group="Settings.Language")
-│       ├── English
-│       ├── Español
-│       └── Français
-├── 📝 Form Interactive Mode (form system in interactive mode)
-├── 📤 Form Submit Mode (form system in submit mode)
-└── 🔄 Form with Pre-Validation (form system with pre-validation)
+```json
+{
+  "menu": [
+    {
+      "cmd": "greeting",
+      "label": "Say Hello",
+      "icon": "👋",
+      "desc": "Display a greeting"
+    },
+    {
+      "label": "Tools",
+      "icon": "🛠️",
+      "items": [
+        {
+          "cmd": "calc",
+          "label": "Calculator",
+          "icon": "🧮"
+        }
+      ]
+    }
+  ]
+}
 ```
 
-## 📖 API Reference
+**Menu Item Fields:**
+- `cmd`: Command ID (mapped to method)
+- `label`: Display text (required)
+- `icon`: Unicode emoji or symbol (optional)
+- `desc`: Help description (optional)
+- `items`: Submenu items (for grouping)
 
-### `@MenuItemCmd` - Menu Item Decorator
+### 2. Define Actions (console_app.py)
 
-Define a menu item with metadata:
+Implement action methods with `@MenuItemCmd` decorator:
+
+```python
+from menu_system import MenuItemCmd
+
+class ConsoleApp:
+    @MenuItemCmd("greeting")
+    def hello_world(self, params, options):
+        print("Hello!")
+        return True  # Keep menu open
+```
+
+**Method Signature:**
+- `params`: Dict with required parameters
+- `options`: Dict with optional parameters
+- Return `True` to keep menu open, `False` to exit
+
+### 3. Start Application (main.py)
+
+```python
+from console_app import ConsoleApp
+
+app = ConsoleApp("My App")
+app.run()
+```
+
+## Menu Item Parameters
+
+Menu actions support two types of parameters:
+
+### Required Parameters (`params`)
+
+Collected from user via interactive form before action execution:
 
 ```python
 @MenuItemCmd(
-    cmd="unique_key",           # Required: unique identifier
-    desc="Display Label",        # Required: menu label text
-    order=0,                     # Optional: display order (lower first)
-    label="Custom Label",        # Optional: override desc
-    group="GroupName",           # Optional: submenu group (dot-notation supported)
-    icon="🎯"                    # Optional: icon emoji
+    "calc",
+    params=[
+        {'name': 'num1', 'type': 'number', 'description': 'First number'},
+        {'name': 'num2', 'type': 'number', 'description': 'Second number'},
+    ]
 )
-def action_function():
-    # Action code
-    return True  # True to keep menu open, False to exit app
-```
-
-### `Menu.add_item(key, label, action, icon=None)`
-
-Manually add an action item to the menu:
-
-```python
-def greet():
-    print("Hello!")
+def show_calculator(self, params, options):
+    num1 = float(params.get('num1', 0))
+    num2 = float(params.get('num2', 0))
+    print(f"Numbers: {num1}, {num2}")
     return True
-
-menu.add_item("greet", "👋 Say Hello", greet, icon="👋")
 ```
 
-**Parameters:**
-- `key` (str): Unique identifier for the item
-- `label` (str): Display text in the menu
-- `action` (callable): Function to execute when selected
-- `icon` (str, optional): Icon emoji prefix
+**Parameter Types:**
+- `text` - Plain text input
+- `number` - Numeric input (validated)
+- `choice` - Single selection from list
+- `string` - String input (for options only)
+- `bool` - Boolean flag (for options only)
 
-### `Menu.add_submenu(key, label, icon=None)`
-
-Manually add a submenu:
-
+**Parameter Definition:**
 ```python
-tools_menu = menu.add_submenu("tools", "Tools", icon="🛠️")
-tools_menu.add_item("calc", "Calculator", show_calculator)
+{
+    'name': 'field_id',           # Unique identifier
+    'type': 'text|number|choice', # Field type
+    'description': 'Help text',   # Shown to user
+    'validation_rule': 'required',# Optional: required, min_length:N, max_length:N, range:MIN-MAX
+    'default': 'value'            # Optional: default value
+}
 ```
 
-**Parameters:**
-- `key` (str): Unique identifier for the submenu
-- `label` (str): Display text in the menu
-- `icon` (str, optional): Icon emoji prefix
+### Optional Parameters (`options`)
 
-**Returns:**
-- A new `Menu` object ready for configuration
-
-### `Menu.register(*functions)`
-
-Register all decorated menu item functions:
+Collected via command-line style syntax after params:
 
 ```python
-# Import decorated functions
-from console_app import hello_world, show_calculator
-
-menu.register(hello_world, show_calculator)
-```
-
-This method:
-- Scans for `@MenuItemCmd` decorators
-- Sorts by order
-- Creates submenus based on `group` parameter
-- Applies group icons if configured
-
-### `ConsoleApp` - Application Controller
-
-```python
-app = ConsoleApp("Application Title")
-menu = app.get_menu()
-menu.register(*decorated_functions)
-app.run()
-```
-
-### `FormSystem` - Form System with Three Modes
-
-Initialize form system with flexible mode support:
-
-```python
-# Interactive mode - Process each field with callbacks
-form_system = FormSystem(
-    mode='interactive',
-    handler=field_handler,                 # Handler with on_field_* methods
-    pre_validation_handler=pre_validator   # Optional pre-validation
+@MenuItemCmd(
+    "calc",
+    options=[
+        {'name': 'operation', 'type': 'choice', 'choices': ['add', 'subtract', 'multiply', 'divide']},
+        {'name': 'text', 'type': 'string', 'description': 'Text note'},
+    ]
 )
-
-# Submit mode - Batch collection and submission
-form_system = FormSystem(
-    mode='submit',
-    endpoint='https://api.example.com/submit'  # Optional API endpoint
-)
+def show_calculator(self, params, options):
+    operation = options.get('operation', 'add')      # Default if not provided
+    text = options.get('text', 'no value')
+    return True
 ```
 
-### Interactive Mode Handler Pattern
-
-Create a handler with field callback methods:
-
-```python
-class FormFieldHandler:
-    def on_field_{field_id}(self, value, field):
-        """
-        Process field after user input.
-        
-        Args:
-            value: User-entered value
-            field: The FormField object with metadata
-        """
-        # Process, validate, or transform the value
-        print(f"Processing {field.label}: {value}")
+**Options Input Format:**
+```
+--operation multiply --text "hello world"
 ```
 
-### Pre-Validation Handler Pattern
+**Features:**
+- Quoted strings support spaces: `"hello world"`
+- Escape sequences:
+  - `\"` for literal double quote
+  - `\\` for literal backslash
+- Boolean flags (presence = True): `--flag`
 
-Create a handler to suggest existing values:
-
-```python
-class FormPreValidationHandler:
-    def pre_validate_{field_id}(self, field, current_results):
-        """
-        Suggest value before user input.
-        
-        Args:
-            field: The FormField object with metadata
-            current_results: Results collected so far
-            
-        Returns:
-            Pre-validated value or None
-        """
-        # Check database, cache, or previous values
-        if existing_value_available:
-            return existing_value
-        return None
+**Example with Escapes:**
+```
+--text "He said \"Hello\"" --path "C:\\Users\\file.txt"
 ```
 
-## � Form Examples
+**Options Definition:**
+```python
+{
+    'name': 'field_id',                # Unique identifier
+    'type': 'choice|string|bool',      # Field type
+    'description': 'Help text',        # Optional
+    'choices': ['opt1', 'opt2']        # Required for choice type
+}
+```
 
-### Example 1: Interactive Mode with Callbacks
+## Form System
+
+The form system processes parameter collection with configurable modes:
+
+### Mode: Interactive
+
+Process fields with callbacks for custom handling:
 
 ```python
-from form_system import FormSystem
-
-# Create handler with field callbacks
-class MyFormHandler:
-    def on_field_name(self, value, field):
-        print(f"✓ Name processed: {value}")
+class MyHandler:
+    def before_input_email(self, field, current_results):
+        """Called before user input - suggest value"""
+        return "user@example.com" or None
     
-    def on_field_email(self, value, field):
-        print(f"✓ Email validated: {value}")
-
-# Initialize and process
-form = FormSystem(mode='interactive', handler=MyFormHandler())
-results = form.process_form(form_definition)
+    def after_input_email(self, value, field, current_results):
+        """Called after user input - process/validate"""
+        if '@' in value:
+            print("✓ Valid email")
 ```
 
-### Example 2: Submit Mode with API Endpoint
+### Mode: Submit
+
+Auto-collect and submit to endpoint:
 
 ```python
-# Batch collection with automatic submission
-form = FormSystem(
-    mode='submit',
-    endpoint='https://api.example.com/submit'
+form = FormSystem(mode='submit', endpoint='https://api.example.com/submit')
+results = form.process_form(form_data)
+```
+
+### Mode: Pre-validation
+
+Suggest values before input:
+
+```python
+form = FormSystem(mode='pre-validation', handler=MyHandler())
+results = form.process_form(form_data)
+```
+
+## Navigation
+
+### Menu Navigation
+
+| Key | Action |
+|-----|--------|
+| **↑/↓** | Navigate menu |
+| **1-9** | Jump to item |
+| **Enter** | Select item |
+| **ESC** | Back/Exit |
+| **Space** | Toggle (multi-select) |
+| **Ctrl+C** | Force exit |
+
+### Form Navigation
+
+- **Text input:** Type normally, Enter to submit
+- **Choice field:** ↑/↓ or ←/→ to select, Enter to confirm
+- **Multi-choice:** ↑/↓ to navigate, Space to toggle, Enter to confirm
+
+## API Reference
+
+### `@MenuItemCmd(cmd, params=[], options=[])`
+
+Decorator for menu actions:
+
+```python
+@MenuItemCmd(
+    "hello",
+    params=[
+        {'name': 'name', 'type': 'text', 'description': 'Your name'}
+    ],
+    options=[
+        {'name': 'greeting', 'type': 'choice', 'choices': ['Hi', 'Hello', 'Hey']}
+    ]
 )
-results = form.process_form(form_definition)
-# Results automatically submitted to endpoint
-```
-
-### Example 3: Pre-Validation with Existing Data
-
-```python
-# Suggest existing values to users
-class PreValidator:
-    def pre_validate_email(self, field, current_results):
-        # Return existing email if available
-        return "user@example.com"
-
-form = FormSystem(
-    mode='interactive',
-    handler=MyFormHandler(),
-    pre_validation_handler=PreValidator()
-)
-results = form.process_form(form_definition)
-```
-
-## 📋 Form Menu Items in Demo
-
-The example application includes three form demos:
-
-| Menu Item | Mode | Features |
-|-----------|------|----------|
-| **Form Interactive Mode** | Interactive | Immediate field callbacks, real-time processing |
-| **Form Submit Mode** | Submit | Batch collection, automatic file save |
-| **Form with Pre-Validation** | Interactive + Pre-validation | Suggest existing values, user confirmation |
-
-All form examples use the same `form_example.json` file but demonstrate different processing strategies.
-
-
-
-### Step 1: Define Actions with Decorators
-
-```python
-# In console_app.py
-
-@MenuItemCmd("exit_app", "Exit", order=99, icon="❌")
-def exit_app():
-    print("Goodbye!")
-    return False  # Return False to exit
-
-@MenuItemCmd("tool1", "Tool 1", order=0, group="Tools", icon="🔧")
-def use_tool1():
-    print("Tool 1 executing...")
-    return True
-
-@MenuItemCmd("opt1", "Option 1", order=0, group="Settings", icon="⚙️")
-def set_option1():
-    print("Setting option 1...")
+def hello(self, params, options):
+    name = params.get('name', '')
+    greeting = options.get('greeting', 'Hello')
+    print(f"{greeting}, {name}!")
     return True
 ```
 
-### Step 2: Configure Group Icons
+**Parameters:**
+- `cmd` (str): Unique command identifier
+- `params` (list): Required parameters definition list
+- `options` (list): Optional parameters definition list
+
+**Returns:** `True` to keep menu open, `False` to exit
+
+### `ConsoleApp.__init__(name)`
+
+Initialize application with menu system:
 
 ```python
-class ConsoleApp:
-    MENU_GROUP_ICONS = {
-        "Tools":        ("🛠️", "Tools"),
-        "Settings":     ("⚙️", "Settings"),
-        "Tools.Advanced": ("🔬", "Advanced Tools")
-    }
+app = ConsoleApp("My Application")
 ```
 
-Format: `"group_path": (icon_emoji, display_name)`
+### `ConsoleApp.run()`
 
-### Step 3: Auto-Register in main.py
+Display menu and start interactive loop:
 
 ```python
-import inspect
-from console_app import ConsoleApp, *  # Import all decorated functions
-
-app = ConsoleApp("My App")
-menu = app.get_menu()
-
-# Auto-discover decorated functions
-decorated = [fn for name, fn in inspect.getmembers(console_app, 
-             predicate=inspect.isfunction) if hasattr(fn, 'cmd')]
-menu.register(*decorated)
-
 app.run()
 ```
 
-## 🔑 Key Concepts
+### `Menu.register(*functions, config_path)`
 
-### Order Parameter
-Controls display sequence (lower numbers appear first):
-```python
-@MenuItemCmd("first", "First Item", order=1)
-@MenuItemCmd("second", "Second Item", order=2)
-@MenuItemCmd("third", "Third Item", order=3)
-```
-
-### Group Parameter
-Creates hierarchical submenus using dot notation:
-```python
-@MenuItemCmd("display", "Display", group="Settings")           # Submenu of Settings
-@MenuItemCmd("theme", "Theme", group="Settings.Display")       # Sub-submenu
-@MenuItemCmd("darkmode", "Dark Mode", group="Settings.Display") # Same level as theme
-```
-
-### Return Values
-- **`True`** - Keep menu open (wait for next user action)
-- **`False`** - Exit application immediately
-
-### Icon Usage
-- Use emoji for visual appeal: 👋, 🛠️, ⚙️, 📖, ❓
-- Icons are automatically prefixed to labels
-- Group icons override item icons
-
-## 🎯 Best Practices
-
-### 1. Use Decorators for All Menu Items
-```python
-@MenuItemCmd("key", "Label", order=0)
-def my_action():
-    return True
-```
-
-### 2. Organize with Groups
-```python
-@MenuItemCmd("a", "Item A", group="Category")
-@MenuItemCmd("b", "Item B", group="Category")
-```
-
-### 3. Handle Errors Gracefully
-```python
-@MenuItemCmd("user_input", "Get Input")
-def get_user_input():
-    try:
-        value = input("Enter value: ")
-        # Process value
-        return True
-    except Exception as e:
-        print(f"Error: {e}")
-        return True  # Stay in menu
-```
-
-### 4. Use Consistent Ordering
-```python
-# Root level
-@MenuItemCmd("a", "First", order=1)
-@MenuItemCmd("b", "Second", order=2)
-@MenuItemCmd("c", "Exit", order=99)
-
-# In groups
-@MenuItemCmd("x", "Item X", group="Tools", order=1)
-@MenuItemCmd("y", "Item Y", group="Tools", order=2)
-```
-
-## 🎯 Interactive Prompts
-
-### Yes/No Selection
-
-Display a boolean choice with left/right arrow navigation:
+Register decorated methods and load menu configuration:
 
 ```python
-result = menu.yes_no_prompt(
-    question="Do you want to continue?",
-    description="Use LEFT/RIGHT arrow keys to select"
+menu = Menu(title="Main Menu")
+menu.register(
+    app.method1,
+    app.method2,
+    config_path="menu_config.json"
 )
-
-if result is True:
-    print("User selected: YES")
-elif result is False:
-    print("User selected: NO")
-else:
-    print("User cancelled (Escape)")
 ```
 
-**Navigation:**
-- **Left/Right Arrows**: Switch between YES and NO
-- **Enter**: Confirm selection
-- **Escape**: Cancel
+### `FormSystem(mode, handler=None, endpoint=None)`
 
-### Multi-Select Checkboxes
-
-Display a list of items with checkbox selection:
+Create form processor:
 
 ```python
-items = [
-    {"label": "Option 1", "description": "First choice", "selected": False},
-    {"label": "Option 2", "description": "Second choice", "selected": True},
-    {"label": "Option 3", "description": "Third choice", "selected": False},
-]
-
-selected = menu.multi_select_prompt("Select items:", items)
-
-if selected is None:
-    print("Selection cancelled")
-else:
-    for item in selected:
-        print(f"Selected: {item['label']}")
+form = FormSystem(mode='interactive', handler=MyHandler())
+results = form.process_form(form_data)
 ```
 
-**Navigation:**
-- **Up/Down Arrows**: Navigate items
-- **Space**: Toggle checkbox for current item
-- **Enter**: Confirm selection
-- **Escape**: Cancel
+**Modes:**
+- `interactive` - Process with callbacks
+- `submit` - Auto-submit to endpoint
+- `pre-validation` - Suggest values with callbacks
 
-## 📝 Example Use Cases
+## Complete Example
 
-- **System Administration Tools** - Configuration management with nested menus
-- **Interactive CLI Tools** - Command-line interfaces with hierarchical commands
-- **Game Menus** - Main menu → Game → Settings → Audio/Video
-- **Data Entry Forms** - Multi-step menu-driven data collection with confirmations
-- **Package/Dependency Management** - Multi-select with yes/no confirmations
-- **Educational Tools** - Interactive tutorials with modular content
-- **DevOps Tools** - Infrastructure management with grouped operations
+**menu_config.json:**
+```json
+{
+  "menu": [
+    {"cmd": "greeting", "label": "Say Hello", "icon": "👋"},
+    {
+      "label": "Tools",
+      "items": [
+        {"cmd": "calc", "label": "Calculator", "icon": "🧮"}
+      ]
+    }
+  ]
+}
+```
+
+**console_app.py:**
+```python
+from menu_system import MenuItemCmd
+
+class ConsoleApp:
+    @MenuItemCmd("greeting")
+    def hello_world(self, params, options):
+        print("\n👋 Hello!")
+        return True
+    
+    @MenuItemCmd(
+        "calc",
+        params=[
+            {'name': 'num1', 'type': 'number', 'description': 'First number'},
+            {'name': 'num2', 'type': 'number', 'description': 'Second number'},
+        ],
+        options=[
+            {'name': 'operation', 'type': 'choice', 'choices': ['add', 'subtract', 'multiply', 'divide']},
+        ]
+    )
+    def show_calculator(self, params, options):
+        num1 = float(params.get('num1', 0))
+        num2 = float(params.get('num2', 0))
+        operation = options.get('operation', 'add')
+        
+        if operation == 'add':
+            result = num1 + num2
+        else:
+            result = 0
+        
+        print(f"\n{num1} + {num2} = {result}")
+        return True
+```
+
+**main.py:**
+```python
+from console_app import ConsoleApp
+
+if __name__ == "__main__":
+    app = ConsoleApp("Demo App")
+    app.run()
+```
+
+## Best Practices
+
+1. **Menu Structure** - Keep JSON organized and readable
+2. **Parameters** - Use type validation (number, choice) for params
+3. **Options** - Use CLI-style format (`--key value`)
+4. **Error Handling** - Gracefully handle user input errors
+5. **Return Values** - Return `True` to stay, `False` to exit
+6. **Icons** - Use consistent Unicode symbols
+7. **Descriptions** - Provide clear help text for all items
+8. **Validation** - Use `validation_rule` for params (required, min_length, range, etc.)
+
+## Keyboard Shortcuts
+
+| Shortcut | Function |
+|----------|----------|
+| Arrow keys | Navigate |
+| Number keys | Jump to item |
+| Enter | Select |
+| ESC | Go back |
+| Space | Toggle selection |
+| Ctrl+C | Emergency exit |
 
 ---
 
-**Happy menu building! 🎉**
+**Built with Python • Cross-platform • Interactive • Extensible**
+
+For more information, check the source code in `menu_system.py` and `form_system.py`.

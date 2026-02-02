@@ -1,0 +1,136 @@
+{
+  "theme": {
+    "primary": "orange",
+    "secondary": "gray",
+    "error": "red"
+  },
+  "reset": {
+    "code": "\u001b[0m",
+    "name": "reset",
+    "description": "Reset all formatting to default"
+  },
+  "colors": {
+    "orange": {
+      "code": "\u001b[38;5;208m",
+      "name": "orange",
+      "rgb": "rgb(255, 165, 0)",
+      "description": "Orange color"
+    },
+    "gray": {
+      "code": "\u001b[90m",
+      "name": "gray",
+      "rgb": "rgb(128, 128, 128)",
+      "description": "Gray color"
+    },
+    "red": {
+      "code": "\u001b[38;5;196m",
+      "name": "red",
+      "rgb": "rgb(255, 0, 0)",
+      "description": "Red color for errors and important alerts"
+    },
+    "green": {
+      "code": "\u001b[38;5;46m",
+      "name": "green",
+      "rgb": "rgb(0, 255, 0)",
+      "description": "Green color for success messages"
+    },
+    "blue": {
+      "code": "\u001b[38;5;33m",
+      "name": "blue",
+      "rgb": "rgb(0, 100, 255)",
+      "description": "Blue color for information"
+    },
+    "yellow": {
+      "code": "\u001b[38;5;226m",
+      "name": "yellow",
+      "rgb": "rgb(255, 255, 0)",
+      "description": "Yellow color for warnings"
+    },
+    "magenta": {
+      "code": "\u001b[38;5;199m",
+      "name": "magenta",
+      "rgb": "rgb(255, 0, 255)",
+      "description": "Magenta/Purple color for special items"
+    },
+    "cyan": {
+      "code": "\u001b[38;5;51m",
+      "name": "cyan",
+      "rgb": "rgb(0, 255, 255)",
+      "description": "Cyan color for highlights"
+    },
+    "white": {
+      "code": "\u001b[38;5;231m",
+      "name": "white",
+      "rgb": "rgb(255, 255, 255)",
+      "description": "White color for text"
+    },
+    "black": {
+      "code": "\u001b[38;5;16m",
+      "name": "black",
+      "rgb": "rgb(0, 0, 0)",
+      "description": "Black color for background"
+    },
+    "dark_gray": {
+      "code": "\u001b[38;5;235m",
+      "name": "dark_gray",
+      "rgb": "rgb(85, 85, 85)",
+      "description": "Dark gray color for dim text"
+    },
+    "light_gray": {
+      "code": "\u001b[38;5;248m",
+      "name": "light_gray",
+      "rgb": "rgb(188, 188, 188)",
+      "description": "Light gray color for subtle text"
+    },
+    "bright_red": {
+      "code": "\u001b[38;5;208m",
+      "name": "bright_red",
+      "rgb": "rgb(255, 85, 85)",
+      "description": "Bright red for emphasis"
+    },
+    "bright_green": {
+      "code": "\u001b[38;5;118m",
+      "name": "bright_green",
+      "rgb": "rgb(85, 255, 85)",
+      "description": "Bright green for emphasis"
+    },
+    "bright_blue": {
+      "code": "\u001b[38;5;87m",
+      "name": "bright_blue",
+      "rgb": "rgb(85, 255, 255)",
+      "description": "Bright blue for emphasis"
+    },
+    "purple": {
+      "code": "\u001b[38;5;171m",
+      "name": "purple",
+      "rgb": "rgb(175, 0, 255)",
+      "description": "Purple color"
+    },
+    "brown": {
+      "code": "\u001b[38;5;130m",
+      "name": "brown",
+      "rgb": "rgb(165, 42, 42)",
+      "description": "Brown color"
+    },
+    "teal": {
+      "code": "\u001b[38;5;6m",
+      "name": "teal",
+      "rgb": "rgb(0, 128, 128)",
+      "description": "Teal color"
+    }
+  },
+  "cursor": {
+    "hide": "\u001b[?25l",
+    "show": "\u001b[?25h"
+  },
+  "cursor_movement": {
+    "up": "\u001b[A",
+    "down": "\u001b[B",
+    "right": "\u001b[C",
+    "left": "\u001b[D"
+  },
+  "screen": {
+    "clear_line": "\u001b[2K",
+    "clear_to_end": "\u001b[0J"
+  }
+}

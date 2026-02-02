@@ -1,0 +1,97 @@
+{
+  "menu": [
+    {
+      "cmd": "greeting",
+      "label": "Say Hello",
+      "icon": "👋",
+      "desc": "Display a friendly greeting message"
+    },
+    {
+      "label": "Tools",
+      "icon": "🔧",
+      "desc": "Collection of utility tools",
+      "items": [
+        {
+          "cmd": "calc",
+          "label": "Calculator",
+          "icon": "🧮",
+          "desc": "Perform basic arithmetic operations"
+        },
+        {
+          "cmd": "sysinfo",
+          "label": "System Information",
+          "icon": "ℹ️",
+          "desc": "Display system and environment details"
+        },
+        {
+          "cmd": "time",
+          "label": "Show Time",
+          "icon": "🕐",
+          "desc": "Display the current date and time"
+        }
+      ]
+    },
+    {
+      "label": "N-Level Menu Demo",
+      "icon": "📁",
+      "desc": "Demonstrate nested menu capabilities",
+      "items": [
+        {
+          "label": "Display Options",
+          "icon": "📺",
+          "desc": "Customize visual display settings",
+          "items": [
+            {
+              "cmd": "theme",
+              "label": "Change Theme",
+              "icon": "🎨",
+              "desc": "Customize the visual appearance"
+            },
+            {
+              "cmd": "font",
+              "label": "Change Font Size",
+              "icon": "🔠",
+              "desc": "Adjust text size for better readability"
+            }
+          ]
+        },
+        {
+          "cmd": "language",
+          "label": "Select Language",
+          "icon": "🌐",
+          "desc": "Choose interface language"
+        }
+      ]
+    },
+    {
+      "cmd": "confirm",
+      "label": "Confirm Demo",
+      "icon": "✅",
+      "desc": "Test the yes/no selection with arrow keys"
+    },
+    {
+      "cmd": "multi",
+      "label": "Multi-Select Demo",
+      "icon": "📌",
+      "desc": "Test multi-select with checkboxes"
+    },
+    {
+      "cmd": "form_interactive",
+      "label": "Form Interactive Mode",
+      "icon": "📝",
+      "desc": "Form with immediate field processing (interactive mode)"
+    },
+    {
+      "cmd": "form_submit",
+      "label": "Form Submit Mode",
+      "icon": "📤",
+      "desc": "Form with automatic submission (submit mode)"
+    },
+    {
+      "cmd": "form_validation",
+      "label": "Form with Pre-Validation",
+      "icon": "🔄",
+      "desc": "Form with built-in field validation rules"
+    }
+  ]
+}

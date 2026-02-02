@@ -15,7 +15,11 @@ class ConsoleApp:
         self.setup_menu()
 
     def setup_menu(self) -> None:
-        """Setup and register all menu items."""
+        """Setup and register all menu items.
+        
+        Menu configuration is loaded from menu_config.json in hierarchical structure.
+        This method collects decorated methods and passes them to register().
+        """
         main_menu = self.main_menu
         
         decorated_methods = []
@@ -24,103 +28,67 @@ class ConsoleApp:
             if hasattr(method, 'cmd'):  
                 decorated_methods.append(method)
         
-        # Pass MENU_GROUP to register method for validation
-        main_menu.register(*decorated_methods, allowed_groups=self.MENU_GROUP)
+        # Load menu configuration from JSON file in this directory
+        config_path = os.path.join(os.path.dirname(__file__), 'menu_config.json')
         
-        # Update group icons and names, and collect group info
-        for group_path, group_config in self.MENU_GROUP.items():
-            icon = group_config.get("icon", "")
-            display_name = group_config.get("name", "")
-            
-            path_parts = group_path.split('.')
-            current_menu = main_menu
-            
-            for i in range(len(path_parts) - 1):
-                submenu_key = '.'.join(path_parts[:i+1])
-                if submenu_key in current_menu.submenus:
-                    current_menu = current_menu.submenus[submenu_key]
-            
-            final_key = path_parts[-1] if len(path_parts) == 1 else '.'.join(path_parts)
-            
-            if final_key in current_menu.items:
-                current_menu.items[final_key].label = f"{icon} {display_name} >"
-        
-        # Re-sort root menu items based on order from MENU_GROUP and MenuItemCmd
-        self._resort_menu(main_menu)
+        # register() will load hierarchical menu structure from JSON and follow that order
+        main_menu.register(*decorated_methods, config_path=config_path)
 
-    def _resort_menu(self, menu: Menu) -> None:
-        """Re-sort menu items based on MENU_GROUP and MenuItemCmd orders.
-        
-        Sorting priority:
-        1. Items without group and items with group are mixed and sorted by their order
-        2. Items without group use MenuItemCmd order
-        3. Groups use MENU_GROUP order
-        """
-        # Build order map for all items
-        item_order_map = {}
-        
-        # Collect order from decorated methods
-        members = inspect.getmembers(self, predicate=inspect.ismethod)
-        for name, method in members:
-            if hasattr(method, 'cmd'):
-                cmd = getattr(method, 'cmd', None)
-                order = getattr(method, 'order', 0)
-                group = getattr(method, 'group', None)
-                if group is None:
-                    # Root menu items: (order_value, item_key)
-                    item_order_map[cmd] = (order, cmd)
-        
-        # Collect group orders from MENU_GROUP
-        for group_key, group_config in self.MENU_GROUP.items():
-            # Only consider first-level groups (no dot in name)
-            if '.' not in group_key:
-                group_order = group_config.get('order', 999)
-                item_order_map[group_key] = (group_order, group_key)
-        
-        # Sort menu._item_order based on the order value
-        def get_sort_key(key):
-            if key in item_order_map:
-                order_val, item_key = item_order_map[key]
-                return (order_val, item_key)
-            else:
-                # Items not in map go to the end
-                return (999, key)
-        
-        menu._item_order.sort(key=get_sort_key)
-    
     def run(self) -> None:
         self.main_menu.display()
 
-    # Group configuration for visual customization and ordering
-    # Only groups defined here will be displayed
-    MENU_GROUP = {
-        "Tools":                  {"icon": "🛠️", "name": "Tools", "order": 1},
-        "nLevel":                 {"icon": "📁", "name": "N-Level Menu Demo", "order": 2},
-        "nLevel.Display":         {"icon": "📺", "name": "Display Options", "order": 1},
-        "nLevel.Language":        {"icon": "🌐", "name": "Language", "order": 2}
-    }
-
     # Menu item action methods
-    @MenuItemCmd("greeting", "Say Hello", order=0, icon="👋", long_desc="Display a friendly greeting message")
-    def hello_world(self):
+    @MenuItemCmd("greeting")
+    def hello_world(self, params, options):
         """Simple hello world action."""
         print("\n👋 Hello from the console app!")
         return True
 
-    @MenuItemCmd("calc", "Calculator", order=0, group="Tools", icon="🧮", long_desc="Perform basic arithmetic operations")
-    def show_calculator(self):
-        """Simple calculator demonstration."""
+    @MenuItemCmd(
+        "calc",
+        params=[
+            {'name': 'num1', 'type': 'number', 'description': 'First number', 'validation_rule': 'required'},
+            {'name': 'num2', 'type': 'number', 'description': 'Second number', 'validation_rule': 'required'},
+        ],
+        options=[
+            {'name': 'operation', 'type': 'choice', 'description': 'Operation','choices': ['add', 'subtract', 'multiply', 'divide']},
+            {'name': 'text', 'type': 'string', 'description': 'a string text'},
+        ]
+    )
+    def show_calculator(self, params, options):
+        """Calculator with parameter collection.
+        
+        Args:
+            params: Dict with 'num1' and 'num2'
+            options: Dict with 'operation'
+        """
+
         try:
-            num1 = float(input("\nEnter first number: "))
-            num2 = float(input("Enter second number: "))
+            num1 = float(params.get('num1', 0))
+            num2 = float(params.get('num2', 0))
+            operation = options.get('operation', 'add')
+
+            result = None            
+            if operation == 'add':
+                result = num1 + num2
+                op_symbol = '+'
+            elif operation == 'subtract':
+                result = num1 - num2
+                op_symbol = '-'
+            elif operation == 'multiply':
+                result = num1 * num2
+                op_symbol = '×'
+            elif operation == 'divide':
+                if num2 == 0:
+                    print("\n❌ Division by zero not allowed")
+                    return True
+                result = num1 / num2
+                op_symbol = '÷'
+            else:                
+                print(f"\n❌ Unknown operation: {operation}")
+                return True
             
-            print(f"\n  {num1} + {num2} = {num1 + num2}")
-            print(f"  {num1} - {num2} = {num1 - num2}")
-            print(f"  {num1} × {num2} = {num1 * num2}")
-            if num2 != 0:
-                print(f"  {num1} ÷ {num2} = {num1 / num2}")
-            else:
-                print(f"  Division by zero not allowed")
+            print(f"\n  {num1} {op_symbol} {num2} = {result}")
         except ValueError:
             print("\n❌ Invalid number input")
         except KeyboardInterrupt:
@@ -128,16 +96,16 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("sysinfo", "System Information", order=1, group="Tools", icon="ℹ️", long_desc="Display system and environment details")
-    def show_system_info(self):
+    @MenuItemCmd("sysinfo")
+    def show_system_info(self, params, options):
         """Display system information."""
         print(f"\nOperating System: {sys.platform}")
         print(f"Python Version: {sys.version.split()[0]}")
         print(f"Current Directory: {os.getcwd()}")
         return True
 
-    @MenuItemCmd("theme", "Change Theme", group="nLevel.Display", icon="🎨", long_desc="Customize the visual appearance")
-    def show_theme_options(self):
+    @MenuItemCmd("theme")
+    def show_theme_options(self, params, options):
         """Display theme options."""
         print("\n" + "=" * 60)
         print("  THEME OPTIONS")
@@ -149,8 +117,8 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("font", "Change Font Size", group="nLevel.Display", icon="🔠", long_desc="Adjust text size for better readability")
-    def show_font_options(self):
+    @MenuItemCmd("font")
+    def show_font_options(self, params, options):
         """Display font size options."""
         print("\n" + "=" * 60)
         print("  FONT SIZE OPTIONS")
@@ -162,34 +130,55 @@ class ConsoleApp:
         print("\n  [This is a demonstration - feature not fully implemented]")
         return True
 
-    @MenuItemCmd("en", "English", group="nLevel.Language", long_desc="Set interface language to English")
-    def set_language_en(self):
-        """Set language to English."""
-        print(f"\n✅ Language changed to: English")
-        return True
-
-    @MenuItemCmd("es", "Español", group="nLevel.Language", long_desc="Cambiar idioma de interfaz al español")
-    def set_language_es(self):
-        """Set language to Español."""
-        print(f"\n✅ Language changed to: Español")
-        return True
-
-    @MenuItemCmd("fr", "Français", group="nLevel.Language", long_desc="Définir la langue de l'interface au français")
-    def set_language_fr(self):
-        """Set language to Français."""
-        print(f"\n✅ Language changed to: Français")
+    @MenuItemCmd(
+        "language",
+        params=[
+            {'name': 'language', 'type': 'choice', 'description': 'Choose interface language', 'default': 'English',
+             'choices': ['English', 'Español', 'Français']},
+        ]
+    )
+    def set_language(self, params, options):
+        """Set interface language."""
+        language = params.get('language', 'English')
+        print(f"\n✅ Language changed to: {language}")
         return True
 
 
-    @MenuItemCmd("time", "Show Time", order=2, group="Tools", icon="🕐", long_desc="Display the current date and time")
-    def show_time(self):
-        """Display current time."""
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"\n  Current time: {current_time}")
+    @MenuItemCmd(
+        "time",
+        params=[
+            {'name': 'timezone', 'type': 'choice', 'description': 'Select timezone', 'default': 'UTC+8 (CST)',
+             'choices': ['UTC-12', 'UTC-8 (PST)', 'UTC-5 (EST)', 'UTC+0 (GMT)', 'UTC+1 (CET)', 'UTC+5:30 (IST)', 'UTC+8 (CST)', 'UTC+9 (JST)']},
+        ]
+    )
+    def show_time(self, params, options):
+        """Display current time in selected timezone."""
+        import datetime
+        from datetime import timezone, timedelta
+        
+        timezone_choice = params.get('timezone', 'UTC+8 (CST)')
+        
+        # Parse timezone offset
+        tz_map = {
+            'UTC-12': timezone(timedelta(hours=-12)),
+            'UTC-8 (PST)': timezone(timedelta(hours=-8)),
+            'UTC-5 (EST)': timezone(timedelta(hours=-5)),
+            'UTC+0 (GMT)': timezone(timedelta(hours=0)),
+            'UTC+1 (CET)': timezone(timedelta(hours=1)),
+            'UTC+5:30 (IST)': timezone(timedelta(hours=5, minutes=30)),
+            'UTC+8 (CST)': timezone(timedelta(hours=8)),
+            'UTC+9 (JST)': timezone(timedelta(hours=9)),
+        }
+        
+        tz = tz_map.get(timezone_choice, timezone(timedelta(hours=8)))
+        current_time = datetime.datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+        
+        print(f"\n  Timezone: {timezone_choice}")
+        print(f"  Current time: {current_time}")
         return True
 
-    @MenuItemCmd("confirm", "Confirm Demo", order=3, icon="✅", long_desc="Test the yes/no selection with arrow keys")
-    def confirm_demo(self):
+    @MenuItemCmd("confirm")
+    def confirm_demo(self, params, options):
         """Demonstrate the yes/no prompt with left/right arrow keys."""
         result = self.main_menu.yes_no_prompt(
             question="Do you want to continue?",
@@ -205,8 +194,8 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("multi", "Multi-Select Demo", order=5, icon="☑️", long_desc="Test multi-select with checkboxes")
-    def multi_select_demo(self):
+    @MenuItemCmd("multi")
+    def multi_select_demo(self, params, options):
         """Demonstrate the multi-select prompt."""
         try:
             items = [            
@@ -232,8 +221,8 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form_interactive", "Form Interactive Mode", order=6, icon="📝", long_desc="Form with immediate field processing (interactive mode)")
-    def form_interactive_demo(self):
+    @MenuItemCmd("form_interactive")
+    def form_interactive_demo(self, params, options):
         """Demonstrate the form system in interactive mode with field callbacks."""
         # Create a handler object with callback methods
         handler = FormFieldHandler()
@@ -266,8 +255,8 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form_submit", "Form Submit Mode", order=7, icon="📤", long_desc="Form with automatic submission (submit mode)")
-    def form_submit_demo(self):
+    @MenuItemCmd("form_submit")
+    def form_submit_demo(self, params, options):
         """Demonstrate the form system in submit mode."""
         # Initialize FormSystem in submit mode
         # Set endpoint to None for local processing, or provide API endpoint for actual submission
@@ -302,18 +291,17 @@ class ConsoleApp:
         
         return True
 
-    @MenuItemCmd("form_with_pre_validation", "Form with Pre-Validation", order=8, icon="🔄", long_desc="Form with pre-validation to suggest existing values")
-    def form_pre_validation_demo(self):
+    @MenuItemCmd("form_validation")
+    def form_pre_validation_demo(self, params, options):
         """Demonstrate the form system with pre-validation functionality."""
-        # Create handler objects
-        handler = FormFieldHandler()
-        pre_validation_handler = FormPreValidationHandler()
+        # Create a combined handler with both before_input_* and after_input_* methods
+        handler = CombinedFormHandler()
         
-        # Initialize FormSystem in interactive mode with pre-validation
+        # Initialize FormSystem in interactive mode
+        # The handler now includes both before_input_* and after_input_* methods
         form_system = FormSystem(
             mode='interactive', 
-            handler=handler,
-            pre_validation_handler=pre_validation_handler
+            handler=handler
         )
         
         # Load form from JSON file
@@ -327,7 +315,7 @@ class ConsoleApp:
             form_data = form_system.load_form_from_file(form_file)
             form_definition = form_data.get('form', {})
             
-            # Process the form with pre-validation
+            # Process the form with pre-validation and post-processing
             results = form_system.process_form(form_definition)
             
             if results is None:
@@ -343,10 +331,17 @@ class ConsoleApp:
 
 
 class FormFieldHandler:
-    """Handler for form field callbacks in interactive mode."""
+    """Handler for form field callbacks using unified pattern.
     
-    def on_field_name(self, value, field):
-        """Callback when 'name' field is completed."""
+    Pattern:
+    - before_input_<field_id>(field, current_results) -> Optional[value]
+      Called before prompting user; can suggest pre-validated values
+    - after_input_<field_id>(value, field, current_results) -> None
+      Called after user input collected; for immediate processing
+    """
+    
+    def after_input_name(self, value, field, results):
+        """Called after 'name' field is completed."""
         if value:
             print(f"  📌 Processing: Name validation...")
             if len(value) < 2:
@@ -356,8 +351,8 @@ class FormFieldHandler:
         else:
             print(f"  ⚠️  Name field skipped")
     
-    def on_field_email(self, value, field):
-        """Callback when 'email' field is completed."""
+    def after_input_email(self, value, field, results):
+        """Called after 'email' field is completed."""
         if value:
             print(f"  📌 Processing: Email validation...")
             if '@' in value:
@@ -367,32 +362,32 @@ class FormFieldHandler:
         else:
             print(f"  ⚠️  Email field skipped")
     
-    def on_field_country(self, value, field):
-        """Callback when 'country' field is completed."""
+    def after_input_country(self, value, field, results):
+        """Called after 'country' field is completed."""
         if value:
             print(f"  📌 Processing: Country selection...")
             print(f"  ✓ Selected region: {value}")
         else:
             print(f"  ⚠️  Country field skipped")
     
-    def on_field_interests(self, value, field):
-        """Callback when 'interests' field is completed."""
+    def after_input_interests(self, value, field, results):
+        """Called after 'interests' field is completed."""
         print(f"  📌 Processing: Interest selections...")
         if isinstance(value, list) and value:
             print(f"  ✓ Selected {len(value)} interests")
         else:
             print(f"  ⚠️  No interests selected")
     
-    def on_field_plan(self, value, field):
-        """Callback when 'plan' field is completed."""
+    def after_input_plan(self, value, field, results):
+        """Called after 'plan' field is completed."""
         if value:
             print(f"  📌 Processing: Subscription plan...")
             print(f"  ✓ Plan selected: {value}")
         else:
             print(f"  ⚠️  Plan field skipped")
     
-    def on_field_bio(self, value, field):
-        """Callback when 'bio' field is completed."""
+    def after_input_bio(self, value, field, results):
+        """Called after 'bio' field is completed."""
         if value:
             print(f"  📌 Processing: Bio content...")
             print(f"  ✓ Bio length: {len(value)} characters")
@@ -401,7 +396,12 @@ class FormFieldHandler:
 
 
 class FormPreValidationHandler:
-    """Handler for form pre-validation callbacks."""
+    """Handler for form before_input callbacks.
+    
+    Pattern:
+    - before_input_<field_id>(field, current_results) -> Optional[value]
+      Called before prompting user; can suggest pre-validated values
+    """
     
     def __init__(self):
         # Sample existing data for demonstration
@@ -413,37 +413,51 @@ class FormPreValidationHandler:
             "subscription": "pro"
         }
     
-    def pre_validate_name(self, field, current_results):
-        """Pre-validate name field."""
+    def before_input_name(self, field, current_results):
+        """Suggest value before 'name' field input."""        
         if "name" in self.existing_data:
             return self.existing_data["name"]
         return None
     
-    def pre_validate_email(self, field, current_results):
-        """Pre-validate email field."""
+    def before_input_email(self, field, current_results):
+        """Suggest value before 'email' field input."""
         if "email" in self.existing_data:
             return self.existing_data["email"]
         return None
     
-    def pre_validate_country(self, field, current_results):
-        """Pre-validate country field."""
+    def before_input_country(self, field, current_results):
+        """Suggest value before 'country' field input."""
         if "country" in self.existing_data:
             return self.existing_data["country"]
         return None
     
-    def pre_validate_interests(self, field, current_results):
-        """Pre-validate interests field."""
+    def before_input_interests(self, field, current_results):
+        """Suggest value before 'interests' field input."""
         if "interests" in self.existing_data:
             return self.existing_data["interests"]
         return None
     
-    def pre_validate_subscription(self, field, current_results):
-        """Pre-validate subscription field."""
+    def before_input_subscription(self, field, current_results):
+        """Suggest value before 'subscription' field input."""
         if "subscription" in self.existing_data:
             return self.existing_data["subscription"]
         return None
     
-    def pre_validate_bio(self, field, current_results):
-        """Pre-validate bio field."""
+    def before_input_bio(self, field, current_results):
+        """Suggest value before 'bio' field input."""
         # Don't provide a default for bio since it's usually unique
         return None
+
+
+class CombinedFormHandler(FormFieldHandler, FormPreValidationHandler):
+    """Combined handler with both before_input_* and after_input_* methods.
+    
+    Inherits:
+    - before_input_* methods from FormPreValidationHandler (suggest values)
+    - after_input_* methods from FormFieldHandler (process values)
+    
+    This is the recommended pattern for forms that need both pre-validation
+    and post-processing functionality.
+    """
+    pass
+
